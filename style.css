@@ -1,0 +1,342 @@
+/* =====================================================
+   Word Detective - style.css (CLEAN REWRITE)
+   Active system only:
+   - .word-group
+   - .letter-block
+   - direct typing preview
+===================================================== */
+
+/* ---------- Base ---------- */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #ffffff;
+}
+
+#game-root {
+  width: min(1040px, calc(100vw - 32px));
+  margin: 0 auto 8px;
+  padding: 14px 16px 28px;
+  box-sizing: border-box;
+}
+
+h1 {
+  text-align: center;
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+/* ---------- Puzzle Area ---------- */
+#puzzleArea {
+  --block-size: 60px;
+  --block-font-size: 24px;
+  --punct-font-size: 30px;
+  --punct-offset: 8px;
+  --trailing-space: 22px;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: flex-start;
+  max-width: 900px;
+  margin: 20px auto 0;
+  padding: 8px;
+}
+
+/* ---------- Word Groups ---------- */
+.word-group {
+  display: inline-flex;
+  gap: 0;
+  cursor: pointer;
+}
+.word-group.selected {
+  position: relative;
+  z-index: 5;
+
+  box-shadow:
+    0 0 6px rgba(180, 220, 255, 0.9),
+    0 0 12px rgba(150, 200, 255, 0.7),
+    0 0 18px rgba(120, 180, 255, 0.5);
+
+  border-radius: 8px;
+  padding: 2px 2px 2px 2px; /* top right bottom left */
+}
+.word-group.revealed {
+  cursor: default;
+}
+
+
+/* ---------- Letter Blocks ---------- */
+.letter-block {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: var(--block-size);
+  height: var(--block-size);
+
+  margin-top: 0;
+
+  border: 2px solid #666;
+  border-radius: 6px;
+
+  font-size: var(--block-font-size);
+  font-weight: bold;
+  color: #000;
+
+  user-select: none;
+}
+
+/* Hidden letters (default state) */
+.letter-block:empty {
+  color: transparent;
+}
+
+
+
+/* Typing preview */
+.letter-block.typing-preview {
+  color: #000;
+}
+
+/* ---------- UI ---------- */
+#message {
+  margin-top: 8px;
+  min-height: 24px;
+  text-align: center;
+}
+
+#controls {
+  max-width: 900px;
+  margin: 14px auto 0;
+  padding: 0 8px;
+  text-align: center;
+}
+
+#statsRow {
+  display: flex;
+  justify-content: center;
+  gap: 72px;
+  align-items: center;
+}
+
+#scoreDisplay,
+#strikeDisplay {
+  min-height: 24px;
+  text-align: center;
+  min-width: 120px;
+  font-weight: 600;
+}
+
+#playerButtonRow {
+  position: fixed;
+  left: 24px;
+  right: 24px;
+  bottom: 18px;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 16px;
+  pointer-events: none;
+}
+
+#holdImageArea,
+#endGameArea {
+  display: contents;
+}
+
+#holdImageBtn {
+  justify-self: start;
+}
+
+#endGameBtn {
+  justify-self: center;
+}
+
+#nextPuzzleBtn {
+  justify-self: end;
+}
+
+#holdImageBtn,
+#endGameBtn,
+#nextPuzzleBtn {
+  width: min(100%, 180px);
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #777;
+  border-radius: 10px;
+  background: #f7f7f7;
+  color: #000;
+  font-size: 16px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#endGameBtn {
+  width: min(100%, 200px);
+}
+
+#holdImageBtn:hover,
+#endGameBtn:hover,
+#nextPuzzleBtn:hover {
+  background: #eeeeee;
+}
+
+.hidden {
+  display: none !important;
+}
+/* =====================================================
+   Image window (Hold to View Image)
+   Size is adjustable via CSS variables below
+===================================================== */
+
+/* --- Image window sizing (adjust later if needed) --- */
+:root {
+  /* Adjust these two to change the window size later */
+  --image-window-width: 55vw;
+  --image-window-height: 55vh;
+}
+
+
+/* --- Image overlay container --- */
+#imageOverlay {
+  position: fixed;
+  inset: 0;
+  display: none;                  /* JS toggles this */
+  align-items: center;
+  justify-content: center;
+  background: transparent;        /* puzzle stays visible */
+  pointer-events: none;           /* never block gameplay */
+  z-index: 9999;
+}
+
+/* --- The image itself --- */
+#puzzleImage {
+  width: var(--image-window-width);
+  height: var(--image-window-height);
+  object-fit: contain;
+
+  /* No white bars */
+  background: transparent;
+
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+
+  pointer-events: auto;
+}
+
+
+/* --- Admin Panel positioning (temporary, functional) --- */
+#adminPanel {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2000;
+  max-width: min(520px, calc(100vw - 32px));
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+/* ---------- Win Banner ---------- */
+#winBanner {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: center;
+}
+
+#endingImage {
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ending-complete #endingImage {
+  width: min(360px, 80vw);
+}
+
+.ending-answer #endingImage {
+  width: min(180px, 40vw);
+}
+/* ---------- Punctuation shown inline (not covered by blocks) ---------- */
+/* ---------- Punctuation shown inline (not covered by blocks) ---------- */
+.word-group .punct {
+  display: inline-block;
+  margin: 0 2px;
+  font-size: var(--punct-font-size);
+  font-weight: 700;         /* bold */
+  line-height: 1;
+  vertical-align: bottom;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Blocks can host a pseudo-element for trailing punctuation */
+.letter-block {
+  position: relative;
+}
+
+/* Trailing punctuation drawn OUTSIDE the block, not part of textContent */
+/* Trailing punctuation drawn OUTSIDE the block, not part of textContent */
+.letter-block[data-trailing]::after {
+  content: attr(data-trailing);
+  position: absolute;
+  left: calc(100% + var(--punct-offset));
+  bottom: 0px;
+  font-size: var(--punct-font-size);
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 20;
+  color: #000;             /* <-- ADD THIS LINE (forces visible even when block is empty) */
+}
+           
+   /* ensure it draws on top */
+
+/* IMPORTANT: allow the ::after punctuation to extend outside blocks/groups */
+.word-group {
+  overflow: visible;
+}
+
+.letter-block {
+  overflow: visible;
+}
+/* Reserve space so trailing punctuation is visible immediately */
+.word-group.has-trailing {
+  margin-right: var(--trailing-space);
+}
+/* Speaker names before colons stay visible, e.g. JOHN: */
+.speaker-label {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 60px;
+  padding: 0 6px;
+  user-select: none;
+}
+/* ---------- Dialogue row layout ---------- */
+.dialogue-line {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  width: 100%;
+  align-items: start;
+}
+
+.dialogue-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.dialogue-line .speaker-label {
+  text-align: right;
+  padding-right: 10px;
+}
