@@ -32,6 +32,9 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   let hintRevealCount = 0;
   let score = 0;
   let typedBuffer = "";
+  let selectedGroup = null;
+  let selectedByHover = false;
+  let hoveredGroup = null;
   let gameEnded = false;
   let currentPuzzleIndex = -1;
 
@@ -240,12 +243,62 @@ function readImageFileAsDataUrl(file) {
   }
 
   function getSelectedGroup() {
-    return document.querySelector(".word-group.selected");
+    if (
+      selectedGroup &&
+      selectedGroup.isConnected &&
+      selectedGroup.classList.contains("selected") &&
+      !selectedGroup.classList.contains("revealed")
+    ) {
+      return selectedGroup;
+    }
+
+    selectedGroup = null;
+    selectedByHover = false;
+    return null;
+  }
+
+  function selectGroup(group, source = "click") {
+    if (!group || group.classList.contains("revealed")) return;
+
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
+      active.blur();
+    }
+
+    const previousGroup = getSelectedGroup();
+    if (previousGroup === group) {
+      setMessage("");
+      return;
+    }
+
+    if (previousGroup) {
+      clearPreview(previousGroup);
+      previousGroup.classList.remove("selected");
+    }
+
+    group.classList.remove("hovered");
+    group.classList.add("selected");
+    selectedGroup = group;
+    selectedByHover = source === "hover";
+    typedBuffer = "";
+    setMessage("");
   }
 
   function getActualWord(group) {
     return Array.from(group.querySelectorAll(".letter-block"))
       .map((b) => b.dataset.letter || "")
+      .join("");
+  }
+
+  function buildFullGuess(blocks) {
+    let j = 0;
+    return blocks
+      .map((b) => {
+        if (isBlockRevealed(b)) return (b.textContent || "").trim();
+        const ch = typedBuffer[j] || "";
+        j += 1;
+        return ch;
+      })
       .join("");
   }
 
@@ -316,6 +369,10 @@ function readImageFileAsDataUrl(file) {
 
       group.classList.remove("selected");
       group.classList.add("revealed");
+      if (selectedGroup === group) {
+        selectedGroup = null;
+        selectedByHover = false;
+      }
             updatePartialUnderlineForGroup(group);
 
 
@@ -329,6 +386,16 @@ function readImageFileAsDataUrl(file) {
     // ---------- WRONG (VALID) ----------
     clearPreview(group);
     typedBuffer = "";
+
+    if (selectedByHover && selectedGroup === group) {
+      selectedGroup = null;
+      selectedByHover = false;
+      if (hoveredGroup === group) {
+        group.classList.add("hovered");
+      } else {
+        group.classList.remove("selected");
+      }
+    }
 
     strikeCount += 1;
 
@@ -407,10 +474,17 @@ if (holdImageBtn && imageOverlay) {
     )
       return;
 
-    const group = getSelectedGroup();
-    if (!group) return;
-
     if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+    let group = getSelectedGroup();
+    if (!group) {
+      if (/^[a-zA-Z]$/.test(event.key) && hoveredGroup) {
+        selectGroup(hoveredGroup, "hover");
+        group = getSelectedGroup();
+      } else {
+        return;
+      }
+    }
 
     const blocks = Array.from(group.querySelectorAll(".letter-block"));
 const hiddenIndices = blocks
@@ -427,23 +501,19 @@ const hiddenIndices = blocks
   }
 
   // Reconstruct the full guess using revealed letters + typed missing letters
-  let j = 0;
-  const fullGuess = blocks
-    .map((b, i) => {
-      if (isBlockRevealed(b)) return (b.textContent || "").trim();
-      const ch = typedBuffer[j] || "";
-      j += 1;
-      return ch;
-    })
-    .join("");
+  const fullGuess = buildFullGuess(blocks);
 
   submitGuess(fullGuess);
-
-  clearPreview(group);
-  typedBuffer = "";
   return;
 }
 
+    if (event.key === "Escape") {
+      clearPreview(group);
+      typedBuffer = "";
+      setMessage("");
+      event.preventDefault();
+      return;
+    }
 
     if (event.key === "Backspace") {
       typedBuffer = typedBuffer.slice(0, -1);
@@ -475,6 +545,13 @@ for (let k = 0; k < hiddenIndices.length; k++) {
   }
 }
 
+if (
+  typedBuffer.length === hiddenIndices.length &&
+  buildFullGuess(blocks).toLowerCase() === getActualWord(group).toLowerCase()
+) {
+  submitGuess(buildFullGuess(blocks));
+}
+
   });
 
   // ---------- RENDER ----------
@@ -495,6 +572,9 @@ for (let k = 0; k < hiddenIndices.length; k++) {
 
     puzzleArea.innerHTML = "";
     window.currentDialogueWordsContainer = null;
+    selectedGroup = null;
+    selectedByHover = false;
+    hoveredGroup = null;
     isGameOver = false;
     clearEnding();
 
@@ -514,25 +594,30 @@ for (let k = 0; k < hiddenIndices.length; k++) {
       const group = document.createElement("div");
       group.className = "word-group";
 
-            group.addEventListener("mouseenter", () => {
+            group.addEventListener("pointerover", (event) => {
+        if (group.contains(event.relatedTarget)) return;
         if (isGameOver) return;
-
-        const active = document.activeElement;
-        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) active.blur();
-
         if (group.classList.contains("revealed")) return;
 
-        document
-          .querySelectorAll(".word-group")
-          .forEach((g) => {
-            clearPreview(g);
-            g.classList.remove("selected");
-          });
+        hoveredGroup = group;
+        if (!getSelectedGroup()) {
+          group.classList.add("hovered");
+          group.classList.add("selected");
+        }
+      });
 
-        group.classList.add("selected");
-        typedBuffer = "";
-        clearPreview(group);
-        setMessage("");
+            group.addEventListener("pointerout", (event) => {
+        if (group.contains(event.relatedTarget)) return;
+        if (hoveredGroup === group) hoveredGroup = null;
+        if (group.classList.contains("hovered")) {
+          group.classList.remove("hovered");
+          group.classList.remove("selected");
+        }
+      });
+
+            group.addEventListener("click", () => {
+        if (isGameOver) return;
+        selectGroup(group);
       });
 // Speaker label rule:
 // If a word is like JOHN: or MARY:, show it normally.
