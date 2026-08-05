@@ -1,4 +1,4 @@
-# Word Detective
+# Guess Guess Guess
 
 A browser-based word puzzle game with JSON-loaded puzzle data and image clues.
 
