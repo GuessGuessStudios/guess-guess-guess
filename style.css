@@ -18,6 +18,10 @@ body {
   margin: 0 auto 8px;
   padding: 14px 16px 28px;
   box-sizing: border-box;
+  min-height: calc(100svh - 8px);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 104px;
 }
 
 h1 {
@@ -25,6 +29,271 @@ h1 {
   margin: 0 0 10px;
   font-size: 34px;
   line-height: 1.1;
+}
+
+#adminAccessTrigger {
+  cursor: default;
+}
+
+#adminAccessForm {
+  margin: -6px auto 10px;
+  text-align: center;
+}
+
+#adminAccessPassword {
+  width: 140px;
+  padding: 5px 7px;
+  font: inherit;
+}
+
+/* ---------- Student animation prototype ---------- */
+#studentStageRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 12%));
+  justify-content: space-between;
+  align-items: start;
+  width: 100%;
+  margin: auto auto 0;
+  padding-top: 24px;
+  position: relative;
+}
+
+.student-stage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.ai-hand-indicator {
+  position: absolute;
+  top: 22%;
+  right: 8%;
+  z-index: 4;
+  display: none;
+  font-size: clamp(20px, 2.5vw, 30px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.ai-hand-indicator.visible {
+  display: block;
+  animation: ai-hand-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes ai-hand-pulse {
+  0%, 100% { transform: translateY(0); opacity: 0.78; }
+  50% { transform: translateY(-4px); opacity: 1; }
+}
+
+.student-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Keep Sho's original character pixels; show only the new asset's desk. */
+#characterFourStage {
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+#characterFourImage {
+  position: absolute;
+  top: 1%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  clip-path: inset(0 0 24.8% 0);
+}
+
+.student-desk-replacement {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  clip-path: inset(76.2% 0 0 0);
+  pointer-events: none;
+}
+
+/* Fixed to the desktop across all student animation frames. */
+.student-name-card {
+  position: absolute;
+  left: 34%;
+  top: 77%;
+  width: 32%;
+  height: 8%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.student-score-plate {
+  position: absolute;
+  left: 50%;
+  top: 90%;
+  z-index: 2;
+  min-width: 68px;
+  padding: 4px 9px;
+  transform: translateX(-50%);
+  border: 2px solid #333;
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #111;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+#myPointsPlate {
+  position: absolute;
+  left: 50%;
+  top: 90%;
+  z-index: 3;
+  display: flex;
+  min-width: 136px;
+  min-height: 42px;
+  padding: 8px 14px;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #333;
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #111;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+#humanRaiseHandBtn {
+  position: absolute;
+  left: 50%;
+  top: calc(90% + 38px);
+  z-index: 3;
+  padding: 5px 10px;
+  transform: translateX(-50%);
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #fff;
+  color: #222;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#humanRaiseHandBtn.raised {
+  background: #eee;
+}
+
+#humanRaiseHandBtn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+#teacherMessage {
+  min-height: 24px;
+  margin: 4px auto;
+  color: #333;
+  font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  #studentStageRow {
+    grid-template-columns: repeat(2, min(150px, calc((100% - 6px) / 4)));
+    gap: 12px 6.6px;
+  }
+
+  #myPointsPlate {
+    top: 50%;
+  }
+}
+
+.student-speech-bubble {
+  position: absolute;
+  top: 14%;
+  z-index: 2;
+  min-width: 90px;
+  max-width: 82%;
+  padding: 10px 14px;
+  border: 2px solid #222;
+  border-radius: 18px;
+  background: #fff;
+  color: #111;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-18px);
+}
+
+.student-speech-bubble::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-bottom: 2px solid #222;
+  background: #fff;
+}
+
+#characterOneSpeech {
+  right: 92%;
+}
+
+#characterOneSpeech::after {
+  right: -11px;
+  border-right: 2px solid #222;
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+#characterTwoSpeech {
+  left: 92%;
+}
+
+#characterTwoSpeech::after {
+  left: -11px;
+  border-left: 2px solid #222;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.student-speech-bubble.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.teacher-speech-bubble {
+  position: fixed;
+  left: 5vw;
+  top: 48%;
+  z-index: 10;
+  min-width: 150px;
+  padding: 14px 20px;
+  border: 3px solid #222;
+  border-radius: 22px;
+  background: #fff;
+  color: #111;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.teacher-speech-bubble.visible {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* ---------- Puzzle Area ---------- */
@@ -47,6 +316,17 @@ h1 {
   max-width: 900px;
   margin: 20px auto 0;
   padding: 8px;
+}
+
+#currentPuzzleNumber {
+  position: fixed;
+  top: 12px;
+  right: 24px;
+  z-index: 1000;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.2;
+  pointer-events: none;
 }
 
 /* ---------- Word Groups ---------- */
@@ -185,26 +465,31 @@ h1 {
   text-align: center;
 }
 
+#startGameBtn {
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 1px solid #777;
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #111;
+  font: inherit;
+  cursor: pointer;
+}
+
+#startGameBtn:hover:not(:disabled) {
+  background: #eee;
+}
+
+#startGameBtn:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
 #controls {
   max-width: 900px;
   margin: 14px auto 0;
   padding: 0 8px;
   text-align: center;
-}
-
-#statsRow {
-  display: flex;
-  justify-content: center;
-  gap: 72px;
-  align-items: center;
-}
-
-#scoreDisplay,
-#strikeDisplay {
-  min-height: 24px;
-  text-align: center;
-  min-width: 120px;
-  font-weight: 600;
 }
 
 #playerButtonRow {
@@ -214,9 +499,9 @@ h1 {
   bottom: 18px;
   z-index: 1000;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
-  gap: 16px;
+  gap: 24px;
   pointer-events: none;
 }
 
@@ -230,15 +515,24 @@ h1 {
 }
 
 #endGameBtn {
-  justify-self: center;
+  justify-self: start;
 }
 
 #nextPuzzleBtn {
+  justify-self: stretch;
+}
+
+#puzzleNavigation {
   justify-self: end;
+  display: flex;
+  gap: 8px;
+  width: min(100%, 360px);
+  pointer-events: none;
 }
 
 #holdImageBtn,
 #endGameBtn,
+#previousPuzzleBtn,
 #nextPuzzleBtn {
   width: min(100%, 180px);
   min-height: 44px;
@@ -258,6 +552,7 @@ h1 {
 
 #holdImageBtn:hover,
 #endGameBtn:hover,
+#previousPuzzleBtn:hover,
 #nextPuzzleBtn:hover {
   background: #eeeeee;
 }
@@ -309,22 +604,260 @@ h1 {
 /* --- Admin Panel positioning (temporary, functional) --- */
 #adminPanel {
   position: fixed;
-  left: 16px;
-  bottom: 16px;
+  inset: 0;
   z-index: 2000;
-  max-width: min(520px, calc(100vw - 32px));
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: none;
+  min-height: 100svh;
+  max-height: 100svh;
   background: rgba(255, 255, 255, 0.96);
+  border: 0;
+  border-radius: 0;
+  padding: 32px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* Player-only content must not show around an open administrator screen. */
+body.admin-open #puzzleArea,
+body.admin-open #teacherSpeech,
+body.admin-open #studentStageRow,
+body.admin-open #controls,
+body.admin-open #imageOverlay,
+body.admin-open #playerButtonRow {
+  visibility: hidden;
+}
+
+.admin-screen {
+  width: min(560px, 90%);
+  text-align: center;
+}
+
+.admin-screen h2 {
+  margin: 0 0 28px;
+  font-size: 32px;
+}
+
+#adminCreateGame {
+  align-self: stretch;
+  width: min(760px, 94%);
+  max-height: calc(100svh - 64px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 0 12px 32px;
+}
+
+.create-game-header {
+  text-align: center;
+  margin-bottom: 34px;
+}
+
+.create-game-header h2 {
+  margin-bottom: 8px;
+  font-size: 24px;
+}
+
+.create-game-header .admin-back-btn {
+  min-height: 32px;
+  padding: 5px 14px;
+  font-size: 14px;
+}
+
+.create-game-form {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.create-game-form label {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#createPuzzleText {
+  width: min(680px, 100%);
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #777;
+  border-radius: 7px;
+  font: inherit;
+}
+
+#createPuzzleBtn,
+#importPuzzleImageBtn {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid #777;
+  border-radius: 7px;
+  background: #f7f7f7;
+  font: inherit;
+  cursor: pointer;
+}
+
+#createPuzzleBtn:disabled,
+#importPuzzleImageBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.create-game-status {
+  min-height: 24px;
+  color: #333;
+  text-align: center;
+}
+
+.edit-puzzle-open-btn {
+  display: block;
+  margin: 24px auto 0;
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 1px solid #777;
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #111;
+  font: inherit;
+  cursor: pointer;
+}
+
+.edit-puzzle-open-btn:hover,
+.edit-puzzle-actions button:hover {
+  background: #eee;
+}
+
+.edit-puzzle-panel {
+  display: grid;
+  gap: 10px;
+  max-width: 680px;
+  margin: 28px auto 0;
+  padding: 18px;
   border: 1px solid #ccc;
-  padding: 10px;
+  border-radius: 8px;
+  text-align: left;
+  max-height: calc(100svh - 260px);
+  overflow-y: auto;
+}
+
+.edit-puzzle-panel h3 {
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+#editPuzzleSelector,
+#editPuzzleText,
+#editPuzzleImage {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+#editPuzzleSelector,
+#editPuzzleText {
+  padding: 7px;
+  border: 1px solid #999;
+  border-radius: 5px;
+}
+
+.edit-puzzle-current-image {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  color: #555;
+  font-size: 14px;
+  text-align: center;
+}
+
+.edit-puzzle-image-preview {
+  display: none;
+  width: min(260px, 100%);
+  max-height: 160px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.edit-puzzle-image-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.edit-puzzle-image-actions button {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #777;
+  border-radius: 7px;
+  background: #f7f7f7;
+  color: #111;
+  font: inherit;
+  cursor: pointer;
+}
+
+.edit-puzzle-image-actions button:hover {
+  background: #eee;
+}
+
+.edit-puzzle-selected-image {
+  min-height: 20px;
+  color: #555;
+  font-size: 14px;
+  text-align: center;
+}
+
+.edit-puzzle-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.edit-puzzle-actions button {
+  min-height: 38px;
+  padding: 7px 16px;
+  border: 1px solid #777;
+  border-radius: 7px;
+  background: #f7f7f7;
+  color: #111;
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-menu-choices {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-menu-choices button,
+.admin-back-btn {
+  min-height: 48px;
+  padding: 10px 18px;
+  border: 1px solid #777;
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #111;
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-menu-choices button:hover,
+.admin-back-btn:hover {
+  background: #eee;
 }
 
 /* ---------- Win Banner ---------- */
 #winBanner {
-  margin-top: 10px;
+  position: fixed;
+  top: 19px;
+  left: 62px;
+  z-index: 900;
+  width: min(180px, 40vw);
+  margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
-  text-align: center;
+  text-align: left;
+  pointer-events: none;
 }
 
 #endingImage {
@@ -336,8 +869,19 @@ h1 {
   box-shadow: none;
 }
 
+#winnerResult {
+  margin-top: 13px;
+  transform: translate(4mm, -7mm);
+  color: #209b2b;
+  font-family: inherit;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: left;
+}
+
 .ending-complete #endingImage {
-  width: min(360px, 80vw);
+  width: min(180px, 40vw);
 }
 
 .ending-answer #endingImage {
@@ -417,4 +961,45 @@ h1 {
 .dialogue-line .speaker-label {
   text-align: right;
   padding-right: 10px;
+}
+
+/* Invisible hit areas stay within each student's existing grid column. */
+.student-stage::after {
+  content: "";
+  position: absolute;
+  inset: -8px 0 -28px;
+  z-index: 3;
+  cursor: pointer;
+}
+
+.student-speech-bubble,
+.student-score-plate {
+  pointer-events: none;
+}
+
+/* Anchor every bubble above its own student, clear of neighboring artwork. */
+#studentStageRow .student-speech-bubble {
+  top: auto;
+  bottom: 92%;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+
+#studentStageRow .student-speech-bubble::after {
+  top: auto;
+  bottom: -11px;
+  left: calc(50% - 9px);
+  right: auto;
+  border-left: 0;
+  border-right: 2px solid #222;
+  transform: rotate(45deg);
+}
+
+/* Split the existing 12px row gap between the mobile hit areas. */
+@media (max-width: 760px) {
+  .student-stage::after {
+    top: 0;
+    bottom: -6px;
+  }
 }

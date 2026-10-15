@@ -1,0 +1,3691 @@
+{
+  "format": "ggg-ettin-exact-input-reuse-fixtures-v1",
+  "purpose": "TEST FIXTURES ONLY. Frozen provider inputs for the bounded offline exact-input-reuse proof. Never import into production gameplay.",
+  "generationVersion": "authenticated-recovery-v1",
+  "generationNote": "Recovered the exact prior offline experiment code from the 2026-10-10 Astra session, reran the current unmodified shortlist functions and provider renderer/span locator with the shipped tokenizer. No model inference. No production changes.",
+  "hashing": {
+    "algorithm": "SHA-256",
+    "orderedCandidates": "UTF-8 JSON.stringify(candidates), no whitespace or trailing newline",
+    "publicState": "UTF-8 exact ettin-input.detail.publicBoardKey string from the source log",
+    "snapshot": "UTF-8 JSON.stringify(snapshot), preserving stored property order, no whitespace or trailing newline",
+    "files": "Exact file bytes"
+  },
+  "usage": "Select a fixture from fixtures; resolve sources[fixture.sourceId].snapshot; pass fixture.candidates.map(word => ({word})) to the provider. All positions are 1-based; targetSlotIndex is 0-based. null control position means absent.",
+  "priorExperiment": {
+    "sessionPath": "/Users/jamesfromhart/.codex/sessions/2026/10/10/rollout-2026-10-10T22-35-02-01a12606-2ff8-7ea1-9e04-4c319001e130.jsonl",
+    "sessionSha256": "66de08b5dbbb739ff14b8416c13640df03acaa5d254c07b5fa3fd4c6ec89a9bc",
+    "literalRecordIndexesZeroBased": {
+      "offlineSetup": 306,
+      "compatibility": 315,
+      "revisedExperiment": 501,
+      "authenticatedResults": 504,
+      "publicExpectation": 536,
+      "baselineHashes": 539
+    },
+    "reconstructionCodeSha256": {
+      "offlineSetup": "9a62b8002c4ef22b6bd33cadb4417c9ea48b7a3df0dcdf703686e8755a15ec84",
+      "compatibility": "2f5241229ac6576e56b1d31969ce3327804a731ac21a2c7752200dee2bc6e91f",
+      "publicExpectation": "8dfc861a816fcd46ab02f0c4833f33fb9fbc638b784db2b83ee4a533258f35cc",
+      "revisedExperimentToolInput": "29cfe6478b05022329734aecada134591c15989cfdbd428b79ab459dea18a41d"
+    },
+    "authenticationBasis": "Exact recovered deterministic algorithm and current source hashes, exact logged baseline order, prior public-state hashes, prior baseline hashes, and all recorded extension boundaries/counts/control positions/input-signature statistics. Combined ordered lists were not independently saved in the prior run."
+  },
+  "extensionPolicy": {
+    "baseline": "Preserve all 64 baseline candidates in order.",
+    "order": "Existing tierOrder, then each tier lexical-verbs queue in its existing order; filter by recovered compatibility, skip baseline members, append without reordering.",
+    "allowance": "Additional raw evaluations equal baseline raw evaluations B. Stop before the first candidate whose full piece count would exceed remaining allowance. Do not skip that candidate or spend reuse savings.",
+    "compatibility": "pastParticiple: lexicalRoles (or roles) contains pastParticiple. finite-third-singular: primaryVerb===true, verb role, no auxiliary role, and pastTense or thirdSingular role. Exact prior policy, including past tense acceptance.",
+    "expectation": "Recovered public-only expectationFromPublic function (prior record 536); no answer-dependent selection."
+  },
+  "sourceHashes": {
+    "gameJs": {
+      "path": "game.js",
+      "sha256": "ff1cedb577ef2084996ce7b21b7fd486a5fd300a1a5754a65d02973ece3494ff",
+      "matchedAllThreeLogs": true
+    },
+    "humanPlaytestJs": {
+      "path": "human-playtest.js",
+      "sha256": "48e86bc2526c0ba311fdfa31003b39d9c5fa91f63aa5d3e248648482dfe882aa",
+      "matchedAllThreeLogs": true
+    },
+    "ettinProviderJs": {
+      "path": "assets/ettin/ettin-provider.js",
+      "sha256": "369ad02141a4dfd1756bd5185d425007f281270f3cb88489f5c7bcc6d87db85e",
+      "matchedAllThreeLogs": true
+    },
+    "candidateProvidersJs": {
+      "path": "candidate-providers.js",
+      "sha256": "7f1688ec35865ac13bc12f444f603e3eb16e7f147310b53a0515aad4abc0f0d3",
+      "matchedAllThreeLogs": true
+    },
+    "languageResource": {
+      "path": "assets/language/human-playtest-language.json",
+      "sha256": "50cf466ad4402e6113a4bd6c0bf115bead9a349830208816e15bb18226c575ca",
+      "matchedAllThreeLogs": true
+    },
+    "dictionary": {
+      "path": "assets/dictionary/en_US-size-60.txt",
+      "sha256": "4ff7e0b6d86763e1e042ffd746e94cdf4432618702deac303a1669e2a838db04",
+      "matchedAllThreeLogs": true
+    }
+  },
+  "additionalDependencyHashes": {
+    "assets/dictionary/dictionary-manager.js": "bbe40e326182ce02d50f16747d1b5e1e55332ad848411cb8e0f60c2400ab56e7",
+    "vaults/vault-4.js": "10c94a9f5a2cf75136e2d40daca745ee7f0cd18b7288984753537287d76be1d1",
+    "vaults/vault-4-blocked.json": "f4c0a473d5260970de95d9d15b556daae2cb3041ed5aa33d8b05143e7a4e1a21",
+    "vaults/vault-1.json": "9d2b74f7ad1fad380f7aaafae0954fbcc177fd37e97186302916176ef1cd4c43",
+    "proper-noun-bank.js": "0b15d7dd840ab7f8e75ed4b528bb0c0dbd6e2648c25e1a52febea08b2c26b023",
+    "assets/language/english-frequency.json": "4389139981da53a9cce2e7446ce041e9fa2607bbc09cefb69207b81fa4ea5156",
+    "assets/ettin/transformers.min.js": "1475fd440e9932ab206682ee42cb18f6097403e9ee77ea62084c592d0f83597d",
+    "assets/ettin/models/onnx-community/ettin-encoder-32m-ONNX/tokenizer.json": "feeb83348dcb033bc6b9d2e1f7906ca9eb2d122845000c9416d894d7c2927149",
+    "assets/ettin/models/onnx-community/ettin-encoder-32m-ONNX/tokenizer_config.json": "7bdc8aa07ab28482e63678060a3f239f59f7a93105f37369abae951bde28ccc4"
+  },
+  "modelIdentity": {
+    "id": "onnx-community/ettin-encoder-32m-ONNX",
+    "dtype": "q4",
+    "configHash": "dfbc89d8af11abb7a976d735fd49f151a7c5e9d3d958b4384c6b9559555a2633",
+    "graphHash": "d9e33ac973131592536e2461318cdff3c5fb3101b86e3a9c9b3229c9afc6440b",
+    "weightsHash": "d68841f1e01a07e375367029684ca4a7cb7aca00551205e93b489ae05b965a95",
+    "providerHash": "369ad02141a4dfd1756bd5185d425007f281270f3cb88489f5c7bcc6d87db85e"
+  },
+  "sources": {
+    "p10-o48": {
+      "puzzleNumber": 10,
+      "runId": "1791640377408-2nct9led",
+      "opportunityNumber": 48,
+      "targetSlotIndex": 7,
+      "targetSlotId": "slot-7",
+      "logPath": "gameplay-logs/human-playtest/gameplay-1791640377408-2nct9led.json",
+      "logSha256": "57b8cdeb6accc02eba3bd622458f36d13034a389fff3303bd3c09fdd9597e399",
+      "eventNumbers": {
+        "ettinInput": 1199,
+        "selectedPreparation": 1198,
+        "ettinScored": 1200
+      },
+      "modeFlags": {
+        "humanPlaytestMode": true,
+        "ettinPilot": true,
+        "situationPilot": false
+      },
+      "runtimeMode": "ettin-pilot",
+      "publicStateSha256": "114eb65bedcc2ee10366cdb2875d1e2fe3b2e74177c97ae3e28c8cd26336ee79",
+      "publicStateReference": "ettin-input.detail.publicBoardKey (exact serialized public slots, spacing, and canonical rejection sets)",
+      "snapshot": {
+        "visible_tokens": [
+          "If",
+          "you",
+          "don't",
+          "have",
+          "any",
+          "_r____,",
+          "it",
+          "___s",
+          "to",
+          "be",
+          "adorable."
+        ],
+        "slots": [
+          {
+            "slot_id": "slot-0",
+            "token_index": 0,
+            "length": 2,
+            "pattern": "If",
+            "capitalization": "titlecase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": []
+          },
+          {
+            "slot_id": "slot-1",
+            "token_index": 1,
+            "length": 3,
+            "pattern": "you",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": []
+          },
+          {
+            "slot_id": "slot-2",
+            "token_index": 2,
+            "length": 4,
+            "pattern": "don't",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "can't"
+            ]
+          },
+          {
+            "slot_id": "slot-3",
+            "token_index": 3,
+            "length": 4,
+            "pattern": "have",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "like",
+              "even"
+            ]
+          },
+          {
+            "slot_id": "slot-4",
+            "token_index": 4,
+            "length": 3,
+            "pattern": "any",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "the"
+            ]
+          },
+          {
+            "slot_id": "slot-5",
+            "token_index": 5,
+            "length": 6,
+            "pattern": "_r____",
+            "capitalization": "lowercase",
+            "punctuation": ",",
+            "solved": false,
+            "public_rejections": [
+              "enough",
+              "family",
+              "number",
+              "health",
+              "school",
+              "drinks",
+              "dreams",
+              "friend",
+              "arctic",
+              "breaks",
+              "orange",
+              "breath",
+              "around",
+              "breast"
+            ]
+          },
+          {
+            "slot_id": "slot-6",
+            "token_index": 6,
+            "length": 2,
+            "pattern": "it",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "so"
+            ]
+          },
+          {
+            "slot_id": "slot-7",
+            "token_index": 7,
+            "length": 4,
+            "pattern": "___s",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": false,
+            "public_rejections": [
+              "this",
+              "kids",
+              "gets",
+              "goes",
+              "says"
+            ]
+          },
+          {
+            "slot_id": "slot-8",
+            "token_index": 8,
+            "length": 2,
+            "pattern": "to",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "go"
+            ]
+          },
+          {
+            "slot_id": "slot-9",
+            "token_index": 9,
+            "length": 2,
+            "pattern": "be",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "go",
+              "is",
+              "of",
+              "an"
+            ]
+          },
+          {
+            "slot_id": "slot-10",
+            "token_index": 10,
+            "length": 8,
+            "pattern": "adorable",
+            "capitalization": "lowercase",
+            "punctuation": ".",
+            "solved": true,
+            "public_rejections": [
+              "anything",
+              "anywhere",
+              "argument",
+              "articles",
+              "almighty",
+              "airspace",
+              "aptitude",
+              "anecdote",
+              "adoptive"
+            ]
+          }
+        ],
+        "target_slot_id": "slot-7",
+        "public_rejections": [
+          "this",
+          "kids",
+          "gets",
+          "goes",
+          "says"
+        ]
+      },
+      "snapshotSha256": "0dbc2f0e5ee329a6d65be4658c4ddf74a943a85daebe011602bb630f81b266c7",
+      "hardValidPopulationCount": 416,
+      "sourceHashReference": "sourceHashes (all six recorded hashes match)",
+      "extensionAuthentication": {
+        "expectation": "finite-third-singular",
+        "compatibleTotal": 57,
+        "compatibleAlreadyInBaseline": 12,
+        "appended": 39,
+        "allowance": 65,
+        "used": 64,
+        "first": "adds",
+        "last": "bobs",
+        "next": {
+          "word": "weds",
+          "cost": 2,
+          "remaining": 1
+        }
+      }
+    },
+    "p4-o26": {
+      "puzzleNumber": 4,
+      "runId": "1791642154365-r0o1moo0",
+      "opportunityNumber": 26,
+      "targetSlotIndex": 5,
+      "targetSlotId": "slot-5",
+      "logPath": "gameplay-logs/human-playtest/gameplay-1791642154365-r0o1moo0.json",
+      "logSha256": "ca284ce1fa07f9227ba907a8014d4110fd2251b2c7d4a0ac9e279f6c41b204f5",
+      "eventNumbers": {
+        "ettinInput": 634,
+        "selectedPreparation": 633,
+        "ettinScored": 635
+      },
+      "modeFlags": {
+        "humanPlaytestMode": true,
+        "ettinPilot": true,
+        "situationPilot": false
+      },
+      "runtimeMode": "ettin-pilot",
+      "publicStateSha256": "3f71b4538fdd573727562718f87ca91d90fa7ae89e7c299fb02e58accbdda546",
+      "publicStateReference": "ettin-input.detail.publicBoardKey (exact serialized public slots, spacing, and canonical rejection sets)",
+      "snapshot": {
+        "visible_tokens": [
+          "Who",
+          "does",
+          "_____",
+          "__v_?",
+          "She",
+          "_____",
+          "Tom."
+        ],
+        "slots": [
+          {
+            "slot_id": "slot-0",
+            "token_index": 0,
+            "length": 3,
+            "pattern": "Who",
+            "capitalization": "titlecase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "gay",
+              "how",
+              "wan",
+              "ago"
+            ]
+          },
+          {
+            "slot_id": "slot-1",
+            "token_index": 1,
+            "length": 4,
+            "pattern": "does",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "gets",
+              "goes"
+            ]
+          },
+          {
+            "slot_id": "slot-2",
+            "token_index": 2,
+            "length": 5,
+            "pattern": "_____",
+            "capitalization": "titlecase",
+            "punctuation": "",
+            "solved": false,
+            "public_rejections": [
+              "david",
+              "ginza",
+              "apple"
+            ]
+          },
+          {
+            "slot_id": "slot-3",
+            "token_index": 3,
+            "length": 4,
+            "pattern": "__v_",
+            "capitalization": "lowercase",
+            "punctuation": "?",
+            "solved": false,
+            "public_rejections": [
+              "levy",
+              "rave",
+              "have"
+            ]
+          },
+          {
+            "slot_id": "slot-4",
+            "token_index": 4,
+            "length": 3,
+            "pattern": "She",
+            "capitalization": "titlecase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "you"
+            ]
+          },
+          {
+            "slot_id": "slot-5",
+            "token_index": 5,
+            "length": 5,
+            "pattern": "_____",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": false,
+            "public_rejections": [
+              "young",
+              "would",
+              "first",
+              "about"
+            ]
+          },
+          {
+            "slot_id": "slot-6",
+            "token_index": 6,
+            "length": 3,
+            "pattern": "Tom",
+            "capitalization": "titlecase",
+            "punctuation": ".",
+            "solved": true,
+            "public_rejections": [
+              "sap",
+              "tcl",
+              "tad",
+              "tsu"
+            ]
+          }
+        ],
+        "target_slot_id": "slot-5",
+        "public_rejections": [
+          "young",
+          "would",
+          "first",
+          "about"
+        ]
+      },
+      "snapshotSha256": "4e42d23c863e868724e370a5c8349a07791d76c48cccbe639564068a836a1f25",
+      "hardValidPopulationCount": 2945,
+      "sourceHashReference": "sourceHashes (all six recorded hashes match)",
+      "extensionAuthentication": {
+        "expectation": "finite-third-singular",
+        "compatibleTotal": 298,
+        "compatibleAlreadyInBaseline": 3,
+        "appended": 64,
+        "allowance": 64,
+        "used": 64,
+        "first": "means",
+        "last": "cited",
+        "next": {
+          "word": "hoped",
+          "cost": 1,
+          "remaining": 0
+        }
+      }
+    },
+    "p3-o76": {
+      "puzzleNumber": 3,
+      "runId": "1791642683752-k2fneovu",
+      "opportunityNumber": 76,
+      "targetSlotIndex": 4,
+      "targetSlotId": "slot-4",
+      "logPath": "gameplay-logs/human-playtest/gameplay-1791642683752-k2fneovu.json",
+      "logSha256": "f0a875b1fd1b686d4249587255e965b73fd1e08c38af6c7d13321f625bfead62",
+      "eventNumbers": {
+        "ettinInput": 2099,
+        "selectedPreparation": 2098,
+        "ettinScored": 2100
+      },
+      "modeFlags": {
+        "humanPlaytestMode": true,
+        "ettinPilot": true,
+        "situationPilot": false
+      },
+      "runtimeMode": "ettin-pilot",
+      "publicStateSha256": "dbcbd25f2b989c49f042db89495e65cfaf591d6d8476b7e0bb9cf01723d9e19c",
+      "publicStateReference": "ettin-input.detail.publicBoardKey (exact serialized public slots, spacing, and canonical rejection sets)",
+      "snapshot": {
+        "visible_tokens": [
+          "__k_n_",
+          "this",
+          "game",
+          "has",
+          "______",
+          "me",
+          "to",
+          "the",
+          "point",
+          "of",
+          "ma____s",
+          "many",
+          "times."
+        ],
+        "slots": [
+          {
+            "slot_id": "slot-0",
+            "token_index": 0,
+            "length": 6,
+            "pattern": "__k_n_",
+            "capitalization": "titlecase",
+            "punctuation": "",
+            "solved": false,
+            "public_rejections": [
+              "orient",
+              "boeing",
+              "paying",
+              "rising",
+              "poland",
+              "dating",
+              "flying",
+              "mining",
+              "giving",
+              "taking",
+              "saving",
+              "saying",
+              "riding",
+              "poking",
+              "bikini"
+            ]
+          },
+          {
+            "slot_id": "slot-1",
+            "token_index": 1,
+            "length": 4,
+            "pattern": "this",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "that"
+            ]
+          },
+          {
+            "slot_id": "slot-2",
+            "token_index": 2,
+            "length": 4,
+            "pattern": "game",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "does",
+              "very",
+              "will",
+              "time",
+              "work"
+            ]
+          },
+          {
+            "slot_id": "slot-3",
+            "token_index": 3,
+            "length": 3,
+            "pattern": "has",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "the"
+            ]
+          },
+          {
+            "slot_id": "slot-4",
+            "token_index": 4,
+            "length": 6,
+            "pattern": "______",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": false,
+            "public_rejections": [
+              "taking",
+              "around",
+              "behind",
+              "pretty",
+              "really",
+              "almost",
+              "beyond",
+              "called",
+              "nearly"
+            ]
+          },
+          {
+            "slot_id": "slot-5",
+            "token_index": 5,
+            "length": 2,
+            "pattern": "me",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "of",
+              "is",
+              "up",
+              "go",
+              "it"
+            ]
+          },
+          {
+            "slot_id": "slot-6",
+            "token_index": 6,
+            "length": 2,
+            "pattern": "to",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "of",
+              "in",
+              "as",
+              "is"
+            ]
+          },
+          {
+            "slot_id": "slot-7",
+            "token_index": 7,
+            "length": 3,
+            "pattern": "the",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": []
+          },
+          {
+            "slot_id": "slot-8",
+            "token_index": 8,
+            "length": 5,
+            "pattern": "point",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "first",
+              "whole"
+            ]
+          },
+          {
+            "slot_id": "slot-9",
+            "token_index": 9,
+            "length": 2,
+            "pattern": "of",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "is"
+            ]
+          },
+          {
+            "slot_id": "slot-10",
+            "token_index": 10,
+            "length": 7,
+            "pattern": "ma____s",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": false,
+            "public_rejections": [
+              "fatally",
+              "harshly",
+              "barring",
+              "faintly",
+              "falling",
+              "passing",
+              "rangers",
+              "carpets",
+              "parcels",
+              "tattoos",
+              "makings",
+              "maniacs",
+              "marvels",
+              "martins",
+              "marries",
+              "matures"
+            ]
+          },
+          {
+            "slot_id": "slot-11",
+            "token_index": 11,
+            "length": 4,
+            "pattern": "many",
+            "capitalization": "lowercase",
+            "punctuation": "",
+            "solved": true,
+            "public_rejections": [
+              "good",
+              "some"
+            ]
+          },
+          {
+            "slot_id": "slot-12",
+            "token_index": 12,
+            "length": 5,
+            "pattern": "times",
+            "capitalization": "lowercase",
+            "punctuation": ".",
+            "solved": true,
+            "public_rejections": [
+              "twice",
+              "thing",
+              "tonic",
+              "taker"
+            ]
+          }
+        ],
+        "target_slot_id": "slot-4",
+        "public_rejections": [
+          "taking",
+          "around",
+          "behind",
+          "pretty",
+          "really",
+          "almost",
+          "beyond",
+          "called",
+          "nearly"
+        ]
+      },
+      "snapshotSha256": "307cc12c4635bcf5f7dde3b1a66b5a111fe0c456fe44da84d421c530bacf9431",
+      "hardValidPopulationCount": 3867,
+      "sourceHashReference": "sourceHashes (all six recorded hashes match)",
+      "extensionAuthentication": {
+        "expectation": "pastParticiple",
+        "compatibleTotal": 533,
+        "compatibleAlreadyInBaseline": 2,
+        "appended": 64,
+        "allowance": 64,
+        "used": 64,
+        "first": "played",
+        "last": "deemed",
+        "next": {
+          "word": "warned",
+          "cost": 1,
+          "remaining": 0
+        }
+      }
+    }
+  },
+  "fixtures": [
+    {
+      "id": "p10-o48-baseline",
+      "sourceId": "p10-o48",
+      "puzzleNumber": 10,
+      "runId": "1791640377408-2nct9led",
+      "opportunityNumber": 48,
+      "targetSlotIndex": 7,
+      "type": "baseline",
+      "candidates": [
+        "does",
+        "guys",
+        "pass",
+        "days",
+        "less",
+        "news",
+        "miss",
+        "plus",
+        "thus",
+        "sans",
+        "eyes",
+        "uses",
+        "boss",
+        "lots",
+        "ones",
+        "runs",
+        "guns",
+        "bias",
+        "loss",
+        "arms",
+        "nuts",
+        "mobs",
+        "ways",
+        "dogs",
+        "bass",
+        "boys",
+        "ends",
+        "bugs",
+        "fans",
+        "lies",
+        "pops",
+        "jobs",
+        "wins",
+        "bats",
+        "laws",
+        "sets",
+        "cars",
+        "acts",
+        "mass",
+        "sees",
+        "arts",
+        "tips",
+        "legs",
+        "kiss",
+        "hits",
+        "mess",
+        "wars",
+        "puts",
+        "ages",
+        "eggs",
+        "fees",
+        "bars",
+        "lets",
+        "asks",
+        "sons",
+        "cuts",
+        "tons",
+        "maps",
+        "cats",
+        "cops",
+        "bags",
+        "dies",
+        "gods",
+        "keys"
+      ],
+      "candidateCount": 64,
+      "candidateListSha256": "92fed103ba04e6004a5f9f864599d642d00c2093004d3b535d71f2c2b95e10d3",
+      "expectedRawWouldBeEvaluations": 65,
+      "pieceCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "targetTokenIds": [
+        [
+          1057
+        ],
+        [
+          6068
+        ],
+        [
+          1509
+        ],
+        [
+          1897
+        ],
+        [
+          1679
+        ],
+        [
+          3668
+        ],
+        [
+          2985
+        ],
+        [
+          5043
+        ],
+        [
+          3021
+        ],
+        [
+          20155
+        ],
+        [
+          2927
+        ],
+        [
+          4648
+        ],
+        [
+          12145
+        ],
+        [
+          8783
+        ],
+        [
+          4394
+        ],
+        [
+          6613
+        ],
+        [
+          11942
+        ],
+        [
+          8492
+        ],
+        [
+          2957
+        ],
+        [
+          6174
+        ],
+        [
+          20392
+        ],
+        [
+          9119,
+          84
+        ],
+        [
+          4088
+        ],
+        [
+          9097
+        ],
+        [
+          16819
+        ],
+        [
+          8290
+        ],
+        [
+          7637
+        ],
+        [
+          19775
+        ],
+        [
+          7458
+        ],
+        [
+          8696
+        ],
+        [
+          42206
+        ],
+        [
+          7375
+        ],
+        [
+          14896
+        ],
+        [
+          28156
+        ],
+        [
+          5323
+        ],
+        [
+          5239
+        ],
+        [
+          8458
+        ],
+        [
+          6993
+        ],
+        [
+          2280
+        ],
+        [
+          11403
+        ],
+        [
+          14635
+        ],
+        [
+          12192
+        ],
+        [
+          9246
+        ],
+        [
+          10135
+        ],
+        [
+          12830
+        ],
+        [
+          4840
+        ],
+        [
+          16860
+        ],
+        [
+          12516
+        ],
+        [
+          11880
+        ],
+        [
+          11624
+        ],
+        [
+          8128
+        ],
+        [
+          8965
+        ],
+        [
+          14935
+        ],
+        [
+          12325
+        ],
+        [
+          15196
+        ],
+        [
+          12176
+        ],
+        [
+          16298
+        ],
+        [
+          8115
+        ],
+        [
+          16581
+        ],
+        [
+          23247
+        ],
+        [
+          15284
+        ],
+        [
+          9778
+        ],
+        [
+          17373
+        ],
+        [
+          10149
+        ]
+      ],
+      "expectedDistinctExactInputs": 3,
+      "controlWord": "pays",
+      "expectedControlPosition": null,
+      "sourcePublicStateSha256": "114eb65bedcc2ee10366cdb2875d1e2fe3b2e74177c97ae3e28c8cd26336ee79",
+      "sourceLogPath": "gameplay-logs/human-playtest/gameplay-1791640377408-2nct9led.json",
+      "sourceHashesReference": "sourceHashes",
+      "generationVersion": "authenticated-recovery-v1",
+      "testFixturesOnly": true
+    },
+    {
+      "id": "p4-o26-baseline",
+      "sourceId": "p4-o26",
+      "puzzleNumber": 4,
+      "runId": "1791642154365-r0o1moo0",
+      "opportunityNumber": 26,
+      "targetSlotIndex": 5,
+      "type": "baseline",
+      "candidates": [
+        "think",
+        "could",
+        "right",
+        "there",
+        "which",
+        "years",
+        "being",
+        "going",
+        "still",
+        "other",
+        "world",
+        "state",
+        "great",
+        "never",
+        "after",
+        "three",
+        "house",
+        "found",
+        "again",
+        "these",
+        "thing",
+        "place",
+        "small",
+        "today",
+        "where",
+        "money",
+        "might",
+        "white",
+        "later",
+        "those",
+        "night",
+        "doing",
+        "party",
+        "whole",
+        "while",
+        "group",
+        "start",
+        "black",
+        "maybe",
+        "every",
+        "women",
+        "point",
+        "early",
+        "often",
+        "since",
+        "times",
+        "water",
+        "local",
+        "south",
+        "under",
+        "music",
+        "power",
+        "level",
+        "large",
+        "until",
+        "order",
+        "based",
+        "known",
+        "wrong",
+        "least",
+        "makes",
+        "thank",
+        "close",
+        "along"
+      ],
+      "candidateCount": 64,
+      "candidateListSha256": "5015d00e3ed0ef2a3d8ca9823f1ac40d4493f7cd4c542258ad691fec6aa0cc6c",
+      "expectedRawWouldBeEvaluations": 64,
+      "pieceCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "targetTokenIds": [
+        [
+          1158
+        ],
+        [
+          812
+        ],
+        [
+          987
+        ],
+        [
+          627
+        ],
+        [
+          534
+        ],
+        [
+          1107
+        ],
+        [
+          1146
+        ],
+        [
+          1469
+        ],
+        [
+          1335
+        ],
+        [
+          643
+        ],
+        [
+          1533
+        ],
+        [
+          1375
+        ],
+        [
+          1270
+        ],
+        [
+          1620
+        ],
+        [
+          846
+        ],
+        [
+          1264
+        ],
+        [
+          2419
+        ],
+        [
+          1119
+        ],
+        [
+          969
+        ],
+        [
+          841
+        ],
+        [
+          2181
+        ],
+        [
+          1659
+        ],
+        [
+          1355
+        ],
+        [
+          3063
+        ],
+        [
+          835
+        ],
+        [
+          2583
+        ],
+        [
+          1537
+        ],
+        [
+          3168
+        ],
+        [
+          1996
+        ],
+        [
+          1110
+        ],
+        [
+          2360
+        ],
+        [
+          2509
+        ],
+        [
+          3128
+        ],
+        [
+          2644
+        ],
+        [
+          1223
+        ],
+        [
+          1387
+        ],
+        [
+          1265
+        ],
+        [
+          2806
+        ],
+        [
+          5046
+        ],
+        [
+          1046
+        ],
+        [
+          2255
+        ],
+        [
+          1127
+        ],
+        [
+          2393
+        ],
+        [
+          2223
+        ],
+        [
+          1580
+        ],
+        [
+          2069
+        ],
+        [
+          1824
+        ],
+        [
+          1980
+        ],
+        [
+          6420
+        ],
+        [
+          762
+        ],
+        [
+          3440
+        ],
+        [
+          1612
+        ],
+        [
+          1268
+        ],
+        [
+          1781
+        ],
+        [
+          1919
+        ],
+        [
+          1340
+        ],
+        [
+          1754
+        ],
+        [
+          1929
+        ],
+        [
+          3430
+        ],
+        [
+          1878
+        ],
+        [
+          2789
+        ],
+        [
+          5717
+        ],
+        [
+          2810
+        ],
+        [
+          2112
+        ]
+      ],
+      "expectedDistinctExactInputs": 1,
+      "controlWord": "loves",
+      "expectedControlPosition": null,
+      "sourcePublicStateSha256": "3f71b4538fdd573727562718f87ca91d90fa7ae89e7c299fb02e58accbdda546",
+      "sourceLogPath": "gameplay-logs/human-playtest/gameplay-1791642154365-r0o1moo0.json",
+      "sourceHashesReference": "sourceHashes",
+      "generationVersion": "authenticated-recovery-v1",
+      "testFixturesOnly": true
+    },
+    {
+      "id": "p3-o76-baseline",
+      "sourceId": "p3-o76",
+      "puzzleNumber": 3,
+      "runId": "1791642683752-k2fneovu",
+      "opportunityNumber": 76,
+      "targetSlotIndex": 4,
+      "type": "baseline",
+      "candidates": [
+        "people",
+        "should",
+        "better",
+        "always",
+        "before",
+        "things",
+        "school",
+        "little",
+        "please",
+        "during",
+        "family",
+        "second",
+        "public",
+        "within",
+        "enough",
+        "number",
+        "having",
+        "united",
+        "rather",
+        "though",
+        "system",
+        "making",
+        "trying",
+        "across",
+        "anyone",
+        "person",
+        "change",
+        "social",
+        "summer",
+        "either",
+        "states",
+        "season",
+        "single",
+        "strong",
+        "myself",
+        "health",
+        "course",
+        "coming",
+        "likely",
+        "couple",
+        "thanks",
+        "matter",
+        "future",
+        "happen",
+        "inside",
+        "office",
+        "saying",
+        "living",
+        "simply",
+        "itself",
+        "friend",
+        "wanted",
+        "former",
+        "double",
+        "seeing",
+        "months",
+        "police",
+        "common",
+        "latest",
+        "except",
+        "series",
+        "report",
+        "county",
+        "anyway"
+      ],
+      "candidateCount": 64,
+      "candidateListSha256": "0cededd352e0f56cec1e10702e32a4ab2bec5d36dbc78ea536904a551845f5f0",
+      "expectedRawWouldBeEvaluations": 64,
+      "pieceCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "targetTokenIds": [
+        [
+          952
+        ],
+        [
+          943
+        ],
+        [
+          1805
+        ],
+        [
+          1900
+        ],
+        [
+          1078
+        ],
+        [
+          1841
+        ],
+        [
+          2143
+        ],
+        [
+          1652
+        ],
+        [
+          4496
+        ],
+        [
+          1309
+        ],
+        [
+          2021
+        ],
+        [
+          1273
+        ],
+        [
+          1345
+        ],
+        [
+          1561
+        ],
+        [
+          2217
+        ],
+        [
+          1180
+        ],
+        [
+          1907
+        ],
+        [
+          25536
+        ],
+        [
+          2581
+        ],
+        [
+          2167
+        ],
+        [
+          985
+        ],
+        [
+          2403
+        ],
+        [
+          2820
+        ],
+        [
+          2439
+        ],
+        [
+          3780
+        ],
+        [
+          1436
+        ],
+        [
+          1818
+        ],
+        [
+          2675
+        ],
+        [
+          5768
+        ],
+        [
+          2057
+        ],
+        [
+          3054
+        ],
+        [
+          2952
+        ],
+        [
+          2014
+        ],
+        [
+          2266
+        ],
+        [
+          4266
+        ],
+        [
+          1786
+        ],
+        [
+          2282
+        ],
+        [
+          3551
+        ],
+        [
+          2779
+        ],
+        [
+          4564
+        ],
+        [
+          6701
+        ],
+        [
+          2647
+        ],
+        [
+          2852
+        ],
+        [
+          5108
+        ],
+        [
+          3304
+        ],
+        [
+          3906
+        ],
+        [
+          3981
+        ],
+        [
+          3811
+        ],
+        [
+          3365
+        ],
+        [
+          3139
+        ],
+        [
+          3331
+        ],
+        [
+          3078
+        ],
+        [
+          3438
+        ],
+        [
+          4021
+        ],
+        [
+          6523
+        ],
+        [
+          2607
+        ],
+        [
+          3513
+        ],
+        [
+          1846
+        ],
+        [
+          6323
+        ],
+        [
+          3707
+        ],
+        [
+          2962
+        ],
+        [
+          1304
+        ],
+        [
+          9635
+        ],
+        [
+          8791
+        ]
+      ],
+      "expectedDistinctExactInputs": 1,
+      "controlWord": "driven",
+      "expectedControlPosition": null,
+      "sourcePublicStateSha256": "dbcbd25f2b989c49f042db89495e65cfaf591d6d8476b7e0bb9cf01723d9e19c",
+      "sourceLogPath": "gameplay-logs/human-playtest/gameplay-1791642683752-k2fneovu.json",
+      "sourceHashesReference": "sourceHashes",
+      "generationVersion": "authenticated-recovery-v1",
+      "testFixturesOnly": true
+    },
+    {
+      "id": "p10-o48-combined",
+      "sourceId": "p10-o48",
+      "puzzleNumber": 10,
+      "runId": "1791640377408-2nct9led",
+      "opportunityNumber": 48,
+      "targetSlotIndex": 7,
+      "type": "combined",
+      "candidates": [
+        "does",
+        "guys",
+        "pass",
+        "days",
+        "less",
+        "news",
+        "miss",
+        "plus",
+        "thus",
+        "sans",
+        "eyes",
+        "uses",
+        "boss",
+        "lots",
+        "ones",
+        "runs",
+        "guns",
+        "bias",
+        "loss",
+        "arms",
+        "nuts",
+        "mobs",
+        "ways",
+        "dogs",
+        "bass",
+        "boys",
+        "ends",
+        "bugs",
+        "fans",
+        "lies",
+        "pops",
+        "jobs",
+        "wins",
+        "bats",
+        "laws",
+        "sets",
+        "cars",
+        "acts",
+        "mass",
+        "sees",
+        "arts",
+        "tips",
+        "legs",
+        "kiss",
+        "hits",
+        "mess",
+        "wars",
+        "puts",
+        "ages",
+        "eggs",
+        "fees",
+        "bars",
+        "lets",
+        "asks",
+        "sons",
+        "cuts",
+        "tons",
+        "maps",
+        "cats",
+        "cops",
+        "bags",
+        "dies",
+        "gods",
+        "keys",
+        "adds",
+        "ties",
+        "pays",
+        "aids",
+        "aims",
+        "sits",
+        "pets",
+        "eats",
+        "buys",
+        "owes",
+        "bans",
+        "lays",
+        "taps",
+        "bows",
+        "jams",
+        "digs",
+        "begs",
+        "pats",
+        "dips",
+        "nods",
+        "rips",
+        "rubs",
+        "sobs",
+        "raps",
+        "gags",
+        "naps",
+        "dubs",
+        "nips",
+        "robs",
+        "rots",
+        "sups",
+        "tows",
+        "errs",
+        "hums",
+        "sews",
+        "ebbs",
+        "tugs",
+        "jogs",
+        "bobs"
+      ],
+      "candidateCount": 103,
+      "candidateListSha256": "8a3452024b020582a72a9d8037f3536552a80431f22a14f7d2e9afb6035cb9c2",
+      "expectedRawWouldBeEvaluations": 129,
+      "pieceCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "targetTokenIds": [
+        [
+          1057
+        ],
+        [
+          6068
+        ],
+        [
+          1509
+        ],
+        [
+          1897
+        ],
+        [
+          1679
+        ],
+        [
+          3668
+        ],
+        [
+          2985
+        ],
+        [
+          5043
+        ],
+        [
+          3021
+        ],
+        [
+          20155
+        ],
+        [
+          2927
+        ],
+        [
+          4648
+        ],
+        [
+          12145
+        ],
+        [
+          8783
+        ],
+        [
+          4394
+        ],
+        [
+          6613
+        ],
+        [
+          11942
+        ],
+        [
+          8492
+        ],
+        [
+          2957
+        ],
+        [
+          6174
+        ],
+        [
+          20392
+        ],
+        [
+          9119,
+          84
+        ],
+        [
+          4088
+        ],
+        [
+          9097
+        ],
+        [
+          16819
+        ],
+        [
+          8290
+        ],
+        [
+          7637
+        ],
+        [
+          19775
+        ],
+        [
+          7458
+        ],
+        [
+          8696
+        ],
+        [
+          42206
+        ],
+        [
+          7375
+        ],
+        [
+          14896
+        ],
+        [
+          28156
+        ],
+        [
+          5323
+        ],
+        [
+          5239
+        ],
+        [
+          8458
+        ],
+        [
+          6993
+        ],
+        [
+          2280
+        ],
+        [
+          11403
+        ],
+        [
+          14635
+        ],
+        [
+          12192
+        ],
+        [
+          9246
+        ],
+        [
+          10135
+        ],
+        [
+          12830
+        ],
+        [
+          4840
+        ],
+        [
+          16860
+        ],
+        [
+          12516
+        ],
+        [
+          11880
+        ],
+        [
+          11624
+        ],
+        [
+          8128
+        ],
+        [
+          8965
+        ],
+        [
+          14935
+        ],
+        [
+          12325
+        ],
+        [
+          15196
+        ],
+        [
+          12176
+        ],
+        [
+          16298
+        ],
+        [
+          8115
+        ],
+        [
+          16581
+        ],
+        [
+          23247
+        ],
+        [
+          15284
+        ],
+        [
+          9778
+        ],
+        [
+          17373
+        ],
+        [
+          10149
+        ],
+        [
+          11323
+        ],
+        [
+          16027
+        ],
+        [
+          17587
+        ],
+        [
+          34253
+        ],
+        [
+          13698
+        ],
+        [
+          17954
+        ],
+        [
+          29286
+        ],
+        [
+          40724
+        ],
+        [
+          41307
+        ],
+        [
+          42261
+        ],
+        [
+          44464
+        ],
+        [
+          41714
+        ],
+        [
+          50156
+        ],
+        [
+          270,
+          5811
+        ],
+        [
+          480,
+          1317
+        ],
+        [
+          2836,
+          84
+        ],
+        [
+          2353,
+          84
+        ],
+        [
+          869,
+          84
+        ],
+        [
+          277,
+          2824
+        ],
+        [
+          44645
+        ],
+        [
+          4172,
+          793
+        ],
+        [
+          7692,
+          84
+        ],
+        [
+          594,
+          1768
+        ],
+        [
+          1218,
+          793
+        ],
+        [
+          305,
+          3544
+        ],
+        [
+          295,
+          1825
+        ],
+        [
+          19155,
+          84
+        ],
+        [
+          295,
+          2824
+        ],
+        [
+          687,
+          1768
+        ],
+        [
+          687,
+          1641
+        ],
+        [
+          402,
+          793
+        ],
+        [
+          281,
+          8819
+        ],
+        [
+          1486,
+          84
+        ],
+        [
+          1547,
+          84
+        ],
+        [
+          396,
+          8819
+        ],
+        [
+          38391,
+          1768
+        ],
+        [
+          246,
+          22201
+        ],
+        [
+          480,
+          14175
+        ],
+        [
+          270,
+          10600
+        ]
+      ],
+      "expectedDistinctExactInputs": 24,
+      "controlWord": "pays",
+      "expectedControlPosition": 67,
+      "sourcePublicStateSha256": "114eb65bedcc2ee10366cdb2875d1e2fe3b2e74177c97ae3e28c8cd26336ee79",
+      "sourceLogPath": "gameplay-logs/human-playtest/gameplay-1791640377408-2nct9led.json",
+      "sourceHashesReference": "sourceHashes",
+      "generationVersion": "authenticated-recovery-v1",
+      "testFixturesOnly": true
+    },
+    {
+      "id": "p4-o26-combined",
+      "sourceId": "p4-o26",
+      "puzzleNumber": 4,
+      "runId": "1791642154365-r0o1moo0",
+      "opportunityNumber": 26,
+      "targetSlotIndex": 5,
+      "type": "combined",
+      "candidates": [
+        "think",
+        "could",
+        "right",
+        "there",
+        "which",
+        "years",
+        "being",
+        "going",
+        "still",
+        "other",
+        "world",
+        "state",
+        "great",
+        "never",
+        "after",
+        "three",
+        "house",
+        "found",
+        "again",
+        "these",
+        "thing",
+        "place",
+        "small",
+        "today",
+        "where",
+        "money",
+        "might",
+        "white",
+        "later",
+        "those",
+        "night",
+        "doing",
+        "party",
+        "whole",
+        "while",
+        "group",
+        "start",
+        "black",
+        "maybe",
+        "every",
+        "women",
+        "point",
+        "early",
+        "often",
+        "since",
+        "times",
+        "water",
+        "local",
+        "south",
+        "under",
+        "music",
+        "power",
+        "level",
+        "large",
+        "until",
+        "order",
+        "based",
+        "known",
+        "wrong",
+        "least",
+        "makes",
+        "thank",
+        "close",
+        "along",
+        "means",
+        "needs",
+        "looks",
+        "comes",
+        "asked",
+        "works",
+        "wants",
+        "shows",
+        "takes",
+        "added",
+        "tried",
+        "lives",
+        "knows",
+        "wrote",
+        "gives",
+        "moved",
+        "plans",
+        "loved",
+        "calls",
+        "feels",
+        "lived",
+        "broke",
+        "plays",
+        "tells",
+        "liked",
+        "turns",
+        "helps",
+        "likes",
+        "tired",
+        "fixed",
+        "keeps",
+        "saved",
+        "loves",
+        "leads",
+        "mixed",
+        "falls",
+        "voted",
+        "spoke",
+        "finds",
+        "talks",
+        "holds",
+        "moves",
+        "deals",
+        "stood",
+        "chose",
+        "tries",
+        "faced",
+        "filed",
+        "pants",
+        "opens",
+        "hired",
+        "cares",
+        "stops",
+        "sucks",
+        "waves",
+        "meets",
+        "drove",
+        "shops",
+        "bears",
+        "walks",
+        "hurts",
+        "ruled",
+        "rated",
+        "cited"
+      ],
+      "candidateCount": 128,
+      "candidateListSha256": "9c2f3295eb16ed2c2ab341358c0f907736f2e5bbda927d2721d61b611dcb1596",
+      "expectedRawWouldBeEvaluations": 128,
+      "pieceCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "targetTokenIds": [
+        [
+          1158
+        ],
+        [
+          812
+        ],
+        [
+          987
+        ],
+        [
+          627
+        ],
+        [
+          534
+        ],
+        [
+          1107
+        ],
+        [
+          1146
+        ],
+        [
+          1469
+        ],
+        [
+          1335
+        ],
+        [
+          643
+        ],
+        [
+          1533
+        ],
+        [
+          1375
+        ],
+        [
+          1270
+        ],
+        [
+          1620
+        ],
+        [
+          846
+        ],
+        [
+          1264
+        ],
+        [
+          2419
+        ],
+        [
+          1119
+        ],
+        [
+          969
+        ],
+        [
+          841
+        ],
+        [
+          2181
+        ],
+        [
+          1659
+        ],
+        [
+          1355
+        ],
+        [
+          3063
+        ],
+        [
+          835
+        ],
+        [
+          2583
+        ],
+        [
+          1537
+        ],
+        [
+          3168
+        ],
+        [
+          1996
+        ],
+        [
+          1110
+        ],
+        [
+          2360
+        ],
+        [
+          2509
+        ],
+        [
+          3128
+        ],
+        [
+          2644
+        ],
+        [
+          1223
+        ],
+        [
+          1387
+        ],
+        [
+          1265
+        ],
+        [
+          2806
+        ],
+        [
+          5046
+        ],
+        [
+          1046
+        ],
+        [
+          2255
+        ],
+        [
+          1127
+        ],
+        [
+          2393
+        ],
+        [
+          2223
+        ],
+        [
+          1580
+        ],
+        [
+          2069
+        ],
+        [
+          1824
+        ],
+        [
+          1980
+        ],
+        [
+          6420
+        ],
+        [
+          762
+        ],
+        [
+          3440
+        ],
+        [
+          1612
+        ],
+        [
+          1268
+        ],
+        [
+          1781
+        ],
+        [
+          1919
+        ],
+        [
+          1340
+        ],
+        [
+          1754
+        ],
+        [
+          1929
+        ],
+        [
+          3430
+        ],
+        [
+          1878
+        ],
+        [
+          2789
+        ],
+        [
+          5717
+        ],
+        [
+          2810
+        ],
+        [
+          2112
+        ],
+        [
+          2097
+        ],
+        [
+          3198
+        ],
+        [
+          4453
+        ],
+        [
+          3249
+        ],
+        [
+          2546
+        ],
+        [
+          2987
+        ],
+        [
+          5605
+        ],
+        [
+          2722
+        ],
+        [
+          3936
+        ],
+        [
+          2879
+        ],
+        [
+          3597
+        ],
+        [
+          4852
+        ],
+        [
+          6057
+        ],
+        [
+          4159
+        ],
+        [
+          4245
+        ],
+        [
+          4395
+        ],
+        [
+          5827
+        ],
+        [
+          7636
+        ],
+        [
+          5841
+        ],
+        [
+          9193
+        ],
+        [
+          6940
+        ],
+        [
+          9377
+        ],
+        [
+          7120
+        ],
+        [
+          8599
+        ],
+        [
+          10490
+        ],
+        [
+          7819
+        ],
+        [
+          7729
+        ],
+        [
+          13052
+        ],
+        [
+          11870
+        ],
+        [
+          4229
+        ],
+        [
+          11359
+        ],
+        [
+          9809
+        ],
+        [
+          14528
+        ],
+        [
+          5644
+        ],
+        [
+          6804
+        ],
+        [
+          11521
+        ],
+        [
+          14285
+        ],
+        [
+          7560
+        ],
+        [
+          9010
+        ],
+        [
+          12088
+        ],
+        [
+          6556
+        ],
+        [
+          9727
+        ],
+        [
+          13330
+        ],
+        [
+          6225
+        ],
+        [
+          9703
+        ],
+        [
+          14177
+        ],
+        [
+          11372
+        ],
+        [
+          4724
+        ],
+        [
+          19110
+        ],
+        [
+          13279
+        ],
+        [
+          14565
+        ],
+        [
+          24505
+        ],
+        [
+          14545
+        ],
+        [
+          35058
+        ],
+        [
+          10212
+        ],
+        [
+          16382
+        ],
+        [
+          12668
+        ],
+        [
+          16999
+        ],
+        [
+          17267
+        ],
+        [
+          16771
+        ],
+        [
+          31835
+        ],
+        [
+          12969
+        ],
+        [
+          20139
+        ],
+        [
+          11106
+        ]
+      ],
+      "expectedDistinctExactInputs": 1,
+      "controlWord": "loves",
+      "expectedControlPosition": 97,
+      "sourcePublicStateSha256": "3f71b4538fdd573727562718f87ca91d90fa7ae89e7c299fb02e58accbdda546",
+      "sourceLogPath": "gameplay-logs/human-playtest/gameplay-1791642154365-r0o1moo0.json",
+      "sourceHashesReference": "sourceHashes",
+      "generationVersion": "authenticated-recovery-v1",
+      "testFixturesOnly": true
+    },
+    {
+      "id": "p3-o76-combined",
+      "sourceId": "p3-o76",
+      "puzzleNumber": 3,
+      "runId": "1791642683752-k2fneovu",
+      "opportunityNumber": 76,
+      "targetSlotIndex": 4,
+      "type": "combined",
+      "candidates": [
+        "people",
+        "should",
+        "better",
+        "always",
+        "before",
+        "things",
+        "school",
+        "little",
+        "please",
+        "during",
+        "family",
+        "second",
+        "public",
+        "within",
+        "enough",
+        "number",
+        "having",
+        "united",
+        "rather",
+        "though",
+        "system",
+        "making",
+        "trying",
+        "across",
+        "anyone",
+        "person",
+        "change",
+        "social",
+        "summer",
+        "either",
+        "states",
+        "season",
+        "single",
+        "strong",
+        "myself",
+        "health",
+        "course",
+        "coming",
+        "likely",
+        "couple",
+        "thanks",
+        "matter",
+        "future",
+        "happen",
+        "inside",
+        "office",
+        "saying",
+        "living",
+        "simply",
+        "itself",
+        "friend",
+        "wanted",
+        "former",
+        "double",
+        "seeing",
+        "months",
+        "police",
+        "common",
+        "latest",
+        "except",
+        "series",
+        "report",
+        "county",
+        "anyway",
+        "played",
+        "needed",
+        "worked",
+        "looked",
+        "turned",
+        "posted",
+        "passed",
+        "bought",
+        "closed",
+        "helped",
+        "caused",
+        "broken",
+        "showed",
+        "signed",
+        "placed",
+        "opened",
+        "agreed",
+        "missed",
+        "forced",
+        "failed",
+        "served",
+        "stated",
+        "joined",
+        "issued",
+        "picked",
+        "listed",
+        "shared",
+        "formed",
+        "walked",
+        "pulled",
+        "scored",
+        "talked",
+        "chosen",
+        "scared",
+        "earned",
+        "headed",
+        "linked",
+        "driven",
+        "stayed",
+        "marked",
+        "gained",
+        "proved",
+        "spoken",
+        "pushed",
+        "locked",
+        "handed",
+        "kicked",
+        "shaped",
+        "argued",
+        "ranked",
+        "viewed",
+        "edited",
+        "packed",
+        "burned",
+        "funded",
+        "waited",
+        "ruined",
+        "jumped",
+        "hosted",
+        "landed",
+        "quoted",
+        "rolled",
+        "wasted",
+        "deemed"
+      ],
+      "candidateCount": 128,
+      "candidateListSha256": "ccc77322abea0f7a6559c78059f50f557db5b194dc60be4dac2261dd8dec92e6",
+      "expectedRawWouldBeEvaluations": 128,
+      "pieceCounts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "targetTokenIds": [
+        [
+          952
+        ],
+        [
+          943
+        ],
+        [
+          1805
+        ],
+        [
+          1900
+        ],
+        [
+          1078
+        ],
+        [
+          1841
+        ],
+        [
+          2143
+        ],
+        [
+          1652
+        ],
+        [
+          4496
+        ],
+        [
+          1309
+        ],
+        [
+          2021
+        ],
+        [
+          1273
+        ],
+        [
+          1345
+        ],
+        [
+          1561
+        ],
+        [
+          2217
+        ],
+        [
+          1180
+        ],
+        [
+          1907
+        ],
+        [
+          25536
+        ],
+        [
+          2581
+        ],
+        [
+          2167
+        ],
+        [
+          985
+        ],
+        [
+          2403
+        ],
+        [
+          2820
+        ],
+        [
+          2439
+        ],
+        [
+          3780
+        ],
+        [
+          1436
+        ],
+        [
+          1818
+        ],
+        [
+          2675
+        ],
+        [
+          5768
+        ],
+        [
+          2057
+        ],
+        [
+          3054
+        ],
+        [
+          2952
+        ],
+        [
+          2014
+        ],
+        [
+          2266
+        ],
+        [
+          4266
+        ],
+        [
+          1786
+        ],
+        [
+          2282
+        ],
+        [
+          3551
+        ],
+        [
+          2779
+        ],
+        [
+          4564
+        ],
+        [
+          6701
+        ],
+        [
+          2647
+        ],
+        [
+          2852
+        ],
+        [
+          5108
+        ],
+        [
+          3304
+        ],
+        [
+          3906
+        ],
+        [
+          3981
+        ],
+        [
+          3811
+        ],
+        [
+          3365
+        ],
+        [
+          3139
+        ],
+        [
+          3331
+        ],
+        [
+          3078
+        ],
+        [
+          3438
+        ],
+        [
+          4021
+        ],
+        [
+          6523
+        ],
+        [
+          2607
+        ],
+        [
+          3513
+        ],
+        [
+          1846
+        ],
+        [
+          6323
+        ],
+        [
+          3707
+        ],
+        [
+          2962
+        ],
+        [
+          1304
+        ],
+        [
+          9635
+        ],
+        [
+          8791
+        ],
+        [
+          4546
+        ],
+        [
+          3058
+        ],
+        [
+          4307
+        ],
+        [
+          3261
+        ],
+        [
+          3531
+        ],
+        [
+          9269
+        ],
+        [
+          4817
+        ],
+        [
+          8686
+        ],
+        [
+          4581
+        ],
+        [
+          6518
+        ],
+        [
+          4269
+        ],
+        [
+          7154
+        ],
+        [
+          2692
+        ],
+        [
+          6704
+        ],
+        [
+          4845
+        ],
+        [
+          5485
+        ],
+        [
+          5821
+        ],
+        [
+          9829
+        ],
+        [
+          6726
+        ],
+        [
+          4242
+        ],
+        [
+          5608
+        ],
+        [
+          4767
+        ],
+        [
+          7416
+        ],
+        [
+          6808
+        ],
+        [
+          5055
+        ],
+        [
+          7117
+        ],
+        [
+          6096
+        ],
+        [
+          4447
+        ],
+        [
+          7428
+        ],
+        [
+          7320
+        ],
+        [
+          11691
+        ],
+        [
+          10062
+        ],
+        [
+          6777
+        ],
+        [
+          16060
+        ],
+        [
+          12431
+        ],
+        [
+          12860
+        ],
+        [
+          7939
+        ],
+        [
+          8877
+        ],
+        [
+          11791
+        ],
+        [
+          7101
+        ],
+        [
+          12103
+        ],
+        [
+          8058
+        ],
+        [
+          13452
+        ],
+        [
+          10184
+        ],
+        [
+          12623
+        ],
+        [
+          14048
+        ],
+        [
+          19301
+        ],
+        [
+          16745
+        ],
+        [
+          9125
+        ],
+        [
+          17045
+        ],
+        [
+          11575
+        ],
+        [
+          16168
+        ],
+        [
+          14998
+        ],
+        [
+          15676
+        ],
+        [
+          14597
+        ],
+        [
+          13308
+        ],
+        [
+          27826
+        ],
+        [
+          16780
+        ],
+        [
+          17386
+        ],
+        [
+          17735
+        ],
+        [
+          15212
+        ],
+        [
+          14436
+        ],
+        [
+          25262
+        ],
+        [
+          14320
+        ]
+      ],
+      "expectedDistinctExactInputs": 1,
+      "controlWord": "driven",
+      "expectedControlPosition": 102,
+      "sourcePublicStateSha256": "dbcbd25f2b989c49f042db89495e65cfaf591d6d8476b7e0bb9cf01723d9e19c",
+      "sourceLogPath": "gameplay-logs/human-playtest/gameplay-1791642683752-k2fneovu.json",
+      "sourceHashesReference": "sourceHashes",
+      "generationVersion": "authenticated-recovery-v1",
+      "testFixturesOnly": true
+    }
+  ]
+}

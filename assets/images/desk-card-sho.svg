@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" preserveAspectRatio="none" role="img" aria-label="Sho">
+  <title>Sho — folded A4 desk name card</title>
+  <!-- A4 folded lengthwise into four panels: front, rear, base and tucked flap. -->
+  <ellipse cx="102" cy="72" rx="94" ry="5" fill="#000" opacity=".13"/>
+  <path d="M 16,8 L 181,10 L 197,68 L 30,67 Z" fill="#e9e8e4" stroke="#555" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 181,10 L 197,68 L 171,72 Z" fill="#d8d7d2" stroke="#555" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 173,68 L 194,68 L 184,64 L 175,64" fill="#f4f3ef" stroke="#888" stroke-width="1"/>
+  <path d="M 16,8 L 181,10 L 171,72 L 5,69 Z" fill="#fffefa" stroke="#555" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 18,11 L 178,13" fill="none" stroke="#e0dfdb" stroke-width="1"/>
+  <g transform="translate(0 2) skewX(-6)">
+    <path d="M 83,26 C 63,13 55,36 72,39 C 93,44 78,63 60,52 M 96,21 L 94,54 M 95,43 C 104,29 113,32 111,44 L 110,54 M 132,35 C 115,30 115,57 129,54 C 141,53 142,36 132,35" fill="none" stroke="#141414" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

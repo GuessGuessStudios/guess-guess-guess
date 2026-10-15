@@ -1,0 +1,124 @@
+{
+  "timing": {
+    "firstGuess": [
+      {
+        "minSeconds": 7,
+        "maxSeconds": 20,
+        "chance": 50
+      },
+      {
+        "minSeconds": 21,
+        "maxSeconds": 30,
+        "chance": 50
+      }
+    ],
+    "betweenGuesses": [
+      {
+        "minSeconds": 2,
+        "maxSeconds": 5,
+        "chance": 15
+      },
+      {
+        "minSeconds": 6,
+        "maxSeconds": 15,
+        "chance": 25
+      },
+      {
+        "minSeconds": 16,
+        "maxSeconds": 25,
+        "chance": 55
+      },
+      {
+        "minSeconds": 26,
+        "maxSeconds": 35,
+        "chance": 5
+      }
+    ]
+  },
+  "correctGuess": {
+    "entries": [
+      {
+        "fromGuess": 1,
+        "chance": 2
+      },
+      {
+        "fromGuess": 2,
+        "chance": 3
+      },
+      {
+        "fromGuess": 3,
+        "chance": 10
+      },
+      {
+        "fromGuess": 4,
+        "chance": 10
+      },
+      {
+        "fromGuess": 5,
+        "chance": 15
+      },
+      {
+        "fromGuess": 6,
+        "chance": 15
+      },
+      {
+        "fromGuess": 7,
+        "chance": 15
+      },
+      {
+        "fromGuess": 8,
+        "chance": 15
+      },
+      {
+        "fromGuess": 9,
+        "chance": 15
+      }
+    ],
+    "continuation": {
+      "fromGuess": 10,
+      "chance": 15
+    }
+  },
+  "wordLength": {
+    "early": {
+      "fromGuess": 1,
+      "toGuess": 6,
+      "ranges": [
+        {
+          "minLength": 1,
+          "maxLength": 4,
+          "chance": 60
+        },
+        {
+          "minLength": 5,
+          "maxLength": 6,
+          "chance": 25
+        },
+        {
+          "minLength": 7,
+          "chance": 15
+        }
+      ]
+    },
+    "later": {
+      "fromGuess": 7,
+      "ranges": [
+        {
+          "minLength": 1,
+          "maxLength": 5,
+          "chance": 66
+        },
+        {
+          "minLength": 6,
+          "chance": 34
+        }
+      ]
+    }
+  },
+  "rules": {
+    "noCaseMistakes": true,
+    "noRepeatedWrongGuessSameSlot": true,
+    "allowSameWordDifferentSlot": true,
+    "neverGuessSolvedSlot": true
+  }
+}

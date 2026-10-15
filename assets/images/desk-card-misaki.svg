@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" preserveAspectRatio="none" role="img" aria-label="Misaki">
+  <title>Misaki — folded A4 desk name card</title>
+  <!-- A4 folded lengthwise into four panels: front, rear, base and tucked flap. -->
+  <ellipse cx="102" cy="72" rx="94" ry="5" fill="#000" opacity=".13"/>
+  <path d="M 16,8 L 181,10 L 197,68 L 30,67 Z" fill="#e9e8e4" stroke="#555" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 181,10 L 197,68 L 171,72 Z" fill="#d8d7d2" stroke="#555" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 173,68 L 194,68 L 184,64 L 175,64" fill="#f4f3ef" stroke="#888" stroke-width="1"/>
+  <path d="M 16,8 L 181,10 L 171,72 L 5,69 Z" fill="#fffefa" stroke="#555" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 18,11 L 178,13" fill="none" stroke="#e0dfdb" stroke-width="1"/>
+  <g transform="translate(0 2) skewX(-6)">
+    <path d="M 30,54 L 32,22 L 43,43 L 55,22 L 56,54 M 68,35 L 67,54 M 68,25 L 68,26 M 91,36 C 78,30 75,42 85,44 C 99,47 91,58 78,52 M 114,38 C 100,29 95,53 107,54 Q 116,54 115,35 L 114,54 M 127,21 L 125,54 M 140,34 L 126,45 L 142,54 M 153,35 L 152,54 M 153,25 L 153,26" fill="none" stroke="#141414" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

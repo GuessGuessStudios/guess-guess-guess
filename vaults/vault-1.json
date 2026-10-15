@@ -1,0 +1,15 @@
+{
+  "scope": "global",
+  "name": "Structural and Grammar Words",
+  "words": [
+    "a", "I", "am", "an", "as", "at", "be", "by", "do", "go", "he", "if", "in", "is", "it", "me", "my", "no", "of", "on", "or", "so", "to", "up", "us", "we",
+    "all", "and", "any", "are", "but", "can", "did", "for", "had", "has", "her", "him", "his", "how", "its", "may", "nor", "not", "our", "out", "per", "she", "the", "too", "was", "who", "why", "yes", "yet", "you",
+    "mine", "myself", "your", "yours", "yourself", "yourselves", "himself", "hers", "herself", "itself", "ours", "ourselves", "they", "them", "their", "theirs", "themselves", "whom", "whose", "whoever", "whomever", "what", "whatever", "which", "whichever",
+    "this", "that", "these", "those", "both", "each", "every", "either", "neither", "some", "many", "much", "few", "little", "more", "most", "less", "least", "enough", "another", "other", "others", "such",
+    "were", "being", "been", "does", "have", "could", "might", "must", "shall", "should", "will", "would",
+    "because", "although", "though", "while", "whereas", "unless", "since", "when", "whenever", "where", "wherever", "before", "after", "until",
+    "about", "above", "across", "against", "along", "among", "around", "behind", "below", "beneath", "beside", "between", "beyond", "down", "during", "from", "inside", "into", "near", "off", "onto", "outside", "over", "through", "throughout", "toward", "towards", "under", "underneath", "upon", "with", "within", "without",
+    "also", "already", "even", "ever", "here", "just", "never", "now", "only", "still", "then", "there", "than", "whether", "else", "own", "same",
+    "it's", "he's", "she's", "that's", "what's", "who's", "where's", "when's", "why's", "how's", "here's", "there's", "I'm", "you're", "we're", "they're", "I've", "you've", "could've", "should've", "would've", "might've", "must've", "I'll", "you'll", "he'll", "she'll", "it'll", "we'll", "they'll", "that'll", "who'll", "what'll", "there'll", "I'd", "you'd", "he'd", "she'd", "it'd", "we'd", "they'd", "who'd", "what'd", "that'd", "isn't", "aren't", "wasn't", "weren't", "don't", "doesn't", "didn't", "haven't", "hasn't", "hadn't", "can't", "couldn't", "won't", "wouldn't", "shouldn't", "mustn't", "mightn't", "let's", "ain't"
+  ]
+}

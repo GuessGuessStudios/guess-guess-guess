@@ -1,0 +1,3120 @@
+{
+  "split": "replay",
+  "sourceHash": "10afb8b7462e7def480779b3f7a6468c1db2be236ea8e2fc78f50943daa46fed",
+  "sourcePolicy": "Global Vaults 1/4 only; no answer insertion or CGA; deterministic argmax with alphabetic ties.",
+  "methodology": "Fixed puzzle-level split; six synthetic public observation states per word, correlated within puzzles. Replay is counterfactual on recorded states, not a simulated full game.",
+  "inputHashes": {
+    "gameplay-logs/gameplay-20260915082903-17894602.json": "2cb57803a327f1e252fc7e65134be1f9e9b8bc836630eba58f09a87fe4f02c5d",
+    "vaults/vault-1.json": "9d2b74f7ad1fad380f7aaafae0954fbcc177fd37e97186302916176ef1cd4c43",
+    "vaults/vault-4.js": "f0c1299506f821430b0ea8966927b0a2a743e1cf2ad2052be69d9f4707d4158b",
+    "vaults/vault-4-blocked.json": "6fcca3165764dc6ec065182268c17de61303a9177cf4c86ab1f6c177d1a1d836",
+    "assets/dictionary/dictionary-manager.js": "bbe40e326182ce02d50f16747d1b5e1e55332ad848411cb8e0f60c2400ab56e7",
+    "assets/dictionary/en_US-size-60.txt": "4ff7e0b6d86763e1e042ffd746e94cdf4432618702deac303a1669e2a838db04",
+    "assets/language/english-frequency.json": "4389139981da53a9cce2e7446ce041e9fa2607bbc09cefb69207b81fa4ea5156"
+  },
+  "summary": {
+    "cases": 45,
+    "top1": 1,
+    "top3": 3,
+    "top5": 7,
+    "top1Percent": 2.22,
+    "failures": {
+      "lexical-coverage": 26,
+      "ranking-or-insufficient-context": 18
+    }
+  },
+  "byScenario": {
+    "recorded": {
+      "cases": 45,
+      "top1": 1,
+      "top3": 3,
+      "top5": 7,
+      "top1Percent": 2.22,
+      "failures": {
+        "lexical-coverage": 26,
+        "ranking-or-insufficient-context": 18
+      }
+    }
+  },
+  "byPuzzle": {
+    "11": {
+      "cases": 45,
+      "top1": 1,
+      "top3": 3,
+      "top5": 7,
+      "top1Percent": 2.22,
+      "failures": {
+        "lexical-coverage": 26,
+        "ranking-or-insufficient-context": 18
+      }
+    }
+  },
+  "rows": [
+    {
+      "puzzle": 11,
+      "event": 4,
+      "scenario": "recorded",
+      "label": "Last",
+      "rank": 62,
+      "candidateCount": 3360,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "last",
+        "probability": 0.0010043222562284935,
+        "grammar": 0.7,
+        "prior": 7.260153242537289,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.007110712014016402,
+          "grammar": 2.2333333333333334,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.006233290834117447,
+          "grammar": 2.2333333333333334,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "your",
+          "probability": 0.005098221404814009,
+          "grammar": 2.2333333333333334,
+          "prior": 11.551433564179971,
+          "roles": [
+            "possessiveDeterminer"
+          ]
+        },
+        {
+          "word": "more",
+          "probability": 0.004531516782635681,
+          "grammar": 2.2333333333333334,
+          "prior": 10.267407180503236,
+          "roles": [
+            "determiner",
+            "properNoun",
+            "noun"
+          ]
+        },
+        {
+          "word": "some",
+          "probability": 0.004055821129789798,
+          "grammar": 2.2333333333333334,
+          "prior": 9.18958683997628,
+          "roles": [
+            "determiner"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 7,
+      "scenario": "recorded",
+      "label": "and",
+      "rank": 2,
+      "candidateCount": 816,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "and",
+        "probability": 0.014137494230860855,
+        "grammar": 1,
+        "prior": 21.258973025544186,
+        "roles": [
+          "conjunction"
+        ]
+      },
+      "top5": [
+        {
+          "word": "the",
+          "probability": 0.017648265933303906,
+          "grammar": 1,
+          "prior": 26.53822546606214,
+          "roles": [
+            "article"
+          ]
+        },
+        {
+          "word": "and",
+          "probability": 0.014137494230860855,
+          "grammar": 1,
+          "prior": 21.258973025544186,
+          "roles": [
+            "conjunction"
+          ]
+        },
+        {
+          "word": "for",
+          "probability": 0.010714217107330486,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "you",
+          "probability": 0.010493721707672573,
+          "grammar": 1,
+          "prior": 15.77972327189375,
+          "roles": [
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "was",
+          "probability": 0.009392144015708048,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "auxiliary",
+            "beAuxiliary",
+            "finiteVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 10,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 8,
+      "candidateCount": 153,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.026074169097297747,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.04324763614651983,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "of",
+          "probability": 0.04235761266455561,
+          "grammar": 1,
+          "prior": 21.112126572366314,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.038707718609506045,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "is",
+          "probability": 0.033697026239413376,
+          "grammar": 1,
+          "prior": 16.79546693796908,
+          "roles": [
+            "auxiliary",
+            "beAuxiliary",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "it",
+          "probability": 0.03100758740829056,
+          "grammar": 1,
+          "prior": 15.454981262797531,
+          "roles": [
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 13,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 8,
+      "candidateCount": 152,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.026169163599237044,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.04340519774092616,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "of",
+          "probability": 0.042511931688237324,
+          "grammar": 1,
+          "prior": 21.112126572366314,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.0388487401867151,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "is",
+          "probability": 0.033819792652889626,
+          "grammar": 1,
+          "prior": 16.79546693796908,
+          "roles": [
+            "auxiliary",
+            "beAuxiliary",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "it",
+          "probability": 0.031120555545882913,
+          "grammar": 1,
+          "prior": 15.454981262797531,
+          "roles": [
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 16,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 399,
+      "candidateCount": 2719,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005656041375519564,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004119410082129096,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0036869753009389976,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.003611098446441324,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.003346000710783395,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.00316550955838591,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 19,
+      "scenario": "recorded",
+      "label": "Saturday",
+      "rank": 670,
+      "candidateCount": 14031,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "Saturday",
+        "probability": 0.0001318532762581337,
+        "grammar": 0.4,
+        "prior": 3.6553258009176024,
+        "roles": [
+          "properNoun",
+          "noun"
+        ]
+      },
+      "top5": [
+        {
+          "word": "happened",
+          "probability": 0.0012430599879824664,
+          "grammar": 3,
+          "prior": 4.59479341998814,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "finished",
+          "probability": 0.001038064379088932,
+          "grammar": 3,
+          "prior": 3.8370564773010587,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "answered",
+          "probability": 0.0006754383125758844,
+          "grammar": 3,
+          "prior": 2.496661097803224,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "listened",
+          "probability": 0.0006258530769761912,
+          "grammar": 3,
+          "prior": 2.3133763678105748,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "finishes",
+          "probability": 0.0005048392270266557,
+          "grammar": 3,
+          "prior": 1.8660659830736148,
+          "roles": [
+            "verb",
+            "finiteVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 22,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 7,
+      "candidateCount": 151,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.027085178727776917,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.04492453624164585,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "of",
+          "probability": 0.04400000265474748,
+          "grammar": 1,
+          "prior": 21.112126572366314,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.040208586236085336,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "it",
+          "probability": 0.03220988725419266,
+          "grammar": 1,
+          "prior": 15.454981262797531,
+          "roles": [
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "on",
+          "probability": 0.03132910619338241,
+          "grammar": 1,
+          "prior": 15.03236398742419,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 25,
+      "scenario": "recorded",
+      "label": "cheese",
+      "rank": 414,
+      "candidateCount": 8366,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "cheese",
+        "probability": 0.00025898354636531395,
+        "grammar": 0.7,
+        "prior": 2.9690471412580988,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "people",
+          "probability": 0.0011855081016262186,
+          "grammar": 1,
+          "prior": 9.513656920021768,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "should",
+          "probability": 0.0009900034940525148,
+          "grammar": 1,
+          "prior": 7.944739963496288,
+          "roles": [
+            "auxiliary",
+            "modal",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "really",
+          "probability": 0.0009763738233972867,
+          "grammar": 1,
+          "prior": 7.835362380695414,
+          "roles": [
+            "adverb"
+          ]
+        },
+        {
+          "word": "before",
+          "probability": 0.00094967482985122,
+          "grammar": 1,
+          "prior": 7.621103984351498,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "around",
+          "probability": 0.0008499827819460983,
+          "grammar": 1,
+          "prior": 6.821079134143652,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 28,
+      "scenario": "recorded",
+      "label": "bought",
+      "rank": 1,
+      "candidateCount": 514,
+      "failure": null,
+      "answerAnalysis": {
+        "word": "bought",
+        "probability": 0.006828643595728704,
+        "grammar": 1,
+        "prior": 3.7580909968560476,
+        "roles": [
+          "verb",
+          "finiteVerb",
+          "pastParticiple"
+        ]
+      },
+      "top5": [
+        {
+          "word": "bought",
+          "probability": 0.006828643595728704,
+          "grammar": 1,
+          "prior": 3.7580909968560476,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "almost",
+          "probability": 0.006666945183434804,
+          "grammar": 0.7,
+          "prior": 5.241573615433452,
+          "roles": []
+        },
+        {
+          "word": "report",
+          "probability": 0.006351185312616006,
+          "grammar": 0.7,
+          "prior": 4.993322195606448,
+          "roles": []
+        },
+        {
+          "word": "market",
+          "probability": 0.006220479808912088,
+          "grammar": 0.7,
+          "prior": 4.8905611107682745,
+          "roles": []
+        },
+        {
+          "word": "street",
+          "probability": 0.006177511816248201,
+          "grammar": 0.7,
+          "prior": 4.856779537580188,
+          "roles": []
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 31,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 7,
+      "candidateCount": 150,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.02767325195001462,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.045899937476789464,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "of",
+          "probability": 0.04495533042273849,
+          "grammar": 1,
+          "prior": 21.112126572366314,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.04108159479575298,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "it",
+          "probability": 0.03290922811422031,
+          "grammar": 1,
+          "prior": 15.454981262797531,
+          "roles": [
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "on",
+          "probability": 0.032009323540815864,
+          "grammar": 1,
+          "prior": 15.03236398742419,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 34,
+      "scenario": "recorded",
+      "label": "bread",
+      "rank": 485,
+      "candidateCount": 5161,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "bread",
+        "probability": 0.00033607734475874336,
+        "grammar": 0.7,
+        "prior": 2.8284271247461903,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "these",
+          "probability": 0.00418840476834168,
+          "grammar": 3,
+          "prior": 8.224910613248532,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "those",
+          "probability": 0.0038010575574918106,
+          "grammar": 3,
+          "prior": 7.464263932294461,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "house",
+          "probability": 0.0033320288019488744,
+          "grammar": 3,
+          "prior": 6.543216468462249,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "women",
+          "probability": 0.0030238799638370945,
+          "grammar": 3,
+          "prior": 5.9380942825161975,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "times",
+          "probability": 0.003002992499189033,
+          "grammar": 3,
+          "prior": 5.897076869164403,
+          "roles": [
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 37,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 6,
+      "candidateCount": 149,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.028975871843003775,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.04806051375283471,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.043015364730465674,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "it",
+          "probability": 0.034458312959107104,
+          "grammar": 1,
+          "prior": 15.454981262797531,
+          "roles": [
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "on",
+          "probability": 0.033516048579156396,
+          "grammar": 1,
+          "prior": 15.03236398742419,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "be",
+          "probability": 0.0308410540002831,
+          "grammar": 1,
+          "prior": 13.832595700925843,
+          "roles": [
+            "auxiliary",
+            "beAuxiliary",
+            "baseVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 40,
+      "scenario": "recorded",
+      "label": "cheese",
+      "rank": 414,
+      "candidateCount": 8365,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "cheese",
+        "probability": 0.00025900613890938404,
+        "grammar": 0.7,
+        "prior": 2.9690471412580988,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "people",
+          "probability": 0.0011856115199491482,
+          "grammar": 1,
+          "prior": 9.513656920021768,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "should",
+          "probability": 0.0009900898574446409,
+          "grammar": 1,
+          "prior": 7.944739963496288,
+          "roles": [
+            "auxiliary",
+            "modal",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "really",
+          "probability": 0.0009764589977990724,
+          "grammar": 1,
+          "prior": 7.835362380695414,
+          "roles": [
+            "adverb"
+          ]
+        },
+        {
+          "word": "before",
+          "probability": 0.0009497576751545097,
+          "grammar": 1,
+          "prior": 7.621103984351498,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "around",
+          "probability": 0.0008500569305695512,
+          "grammar": 1,
+          "prior": 6.821079134143652,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 43,
+      "scenario": "recorded",
+      "label": "bread",
+      "rank": 484,
+      "candidateCount": 5160,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "bread",
+        "probability": 0.00033649927493366435,
+        "grammar": 0.7,
+        "prior": 2.8284271247461903,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "these",
+          "probability": 0.004193663124443651,
+          "grammar": 3,
+          "prior": 8.224910613248532,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "those",
+          "probability": 0.003805829616379828,
+          "grammar": 3,
+          "prior": 7.464263932294461,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "house",
+          "probability": 0.0033362120160725676,
+          "grammar": 3,
+          "prior": 6.543216468462249,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "women",
+          "probability": 0.0030276763107851394,
+          "grammar": 3,
+          "prior": 5.9380942825161975,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "times",
+          "probability": 0.0030067626228532113,
+          "grammar": 3,
+          "prior": 5.897076869164403,
+          "roles": [
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 46,
+      "scenario": "recorded",
+      "label": "and",
+      "rank": 2,
+      "candidateCount": 815,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "and",
+        "probability": 0.014246175331907954,
+        "grammar": 1,
+        "prior": 21.258973025544186,
+        "roles": [
+          "conjunction"
+        ]
+      },
+      "top5": [
+        {
+          "word": "the",
+          "probability": 0.017783935871829262,
+          "grammar": 1,
+          "prior": 26.53822546606214,
+          "roles": [
+            "article"
+          ]
+        },
+        {
+          "word": "and",
+          "probability": 0.014246175331907954,
+          "grammar": 1,
+          "prior": 21.258973025544186,
+          "roles": [
+            "conjunction"
+          ]
+        },
+        {
+          "word": "for",
+          "probability": 0.010796581979992325,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "you",
+          "probability": 0.01057439153576574,
+          "grammar": 1,
+          "prior": 15.77972327189375,
+          "roles": [
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "was",
+          "probability": 0.009464345534318882,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "auxiliary",
+            "beAuxiliary",
+            "finiteVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 49,
+      "scenario": "recorded",
+      "label": "Saturday",
+      "rank": 669,
+      "candidateCount": 14030,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "Saturday",
+        "probability": 0.00013187686543243913,
+        "grammar": 0.4,
+        "prior": 3.6553258009176024,
+        "roles": [
+          "properNoun",
+          "noun"
+        ]
+      },
+      "top5": [
+        {
+          "word": "happened",
+          "probability": 0.0012432823772894354,
+          "grammar": 3,
+          "prior": 4.59479341998814,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "finished",
+          "probability": 0.0010382500937125918,
+          "grammar": 3,
+          "prior": 3.8370564773010587,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "answered",
+          "probability": 0.0006755591516823526,
+          "grammar": 3,
+          "prior": 2.496661097803224,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "listened",
+          "probability": 0.000625965045049654,
+          "grammar": 3,
+          "prior": 2.3133763678105748,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "finishes",
+          "probability": 0.0005049295451504106,
+          "grammar": 3,
+          "prior": 1.8660659830736148,
+          "roles": [
+            "verb",
+            "finiteVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 52,
+      "scenario": "recorded",
+      "label": "Maria",
+      "rank": 24,
+      "candidateCount": 1144,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "maria",
+        "probability": 0.0033728227314326533,
+        "grammar": 3,
+        "prior": 2.5315131879405595,
+        "roles": [
+          "properNoun",
+          "noun"
+        ]
+      },
+      "top5": [
+        {
+          "word": "water",
+          "probability": 0.007642033040798823,
+          "grammar": 3,
+          "prior": 5.735820992063307,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "watch",
+          "probability": 0.006745645462865307,
+          "grammar": 3,
+          "prior": 5.063026375881119,
+          "roles": [
+            "noun",
+            "verb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "major",
+          "probability": 0.006561185432945177,
+          "grammar": 3,
+          "prior": 4.924577653379664,
+          "roles": [
+            "properNoun",
+            "noun"
+          ]
+        },
+        {
+          "word": "march",
+          "probability": 0.006381769472243545,
+          "grammar": 3,
+          "prior": 4.789914818475714,
+          "roles": [
+            "properNoun",
+            "noun"
+          ]
+        },
+        {
+          "word": "David",
+          "probability": 0.005831861651850035,
+          "grammar": 3,
+          "prior": 4.377174805042958,
+          "roles": [
+            "properNoun",
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 55,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 398,
+      "candidateCount": 2718,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005669362317719094,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004129111995526989,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.003695658756666085,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.003619603199233631,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.0033538811131900753,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.0031729648733420245,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 58,
+      "scenario": "recorded",
+      "label": "cheese",
+      "rank": 413,
+      "candidateCount": 8364,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "cheese",
+        "probability": 0.00025910927997701633,
+        "grammar": 0.7,
+        "prior": 2.9690471412580988,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "people",
+          "probability": 0.0011860836525344205,
+          "grammar": 1,
+          "prior": 9.513656920021768,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "should",
+          "probability": 0.0009904841296629703,
+          "grammar": 1,
+          "prior": 7.944739963496288,
+          "roles": [
+            "auxiliary",
+            "modal",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "really",
+          "probability": 0.000976847841955262,
+          "grammar": 1,
+          "prior": 7.835362380695414,
+          "roles": [
+            "adverb"
+          ]
+        },
+        {
+          "word": "before",
+          "probability": 0.0009501358863468,
+          "grammar": 1,
+          "prior": 7.621103984351498,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "around",
+          "probability": 0.0008503954390687565,
+          "grammar": 1,
+          "prior": 6.821079134143652,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 61,
+      "scenario": "recorded",
+      "label": "bread",
+      "rank": 483,
+      "candidateCount": 5159,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "bread",
+        "probability": 0.0003371258871101322,
+        "grammar": 0.7,
+        "prior": 2.8284271247461903,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "these",
+          "probability": 0.004201472354874529,
+          "grammar": 3,
+          "prior": 8.224910613248532,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "those",
+          "probability": 0.003812916642584136,
+          "grammar": 3,
+          "prior": 7.464263932294461,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "house",
+          "probability": 0.0033424245437903804,
+          "grammar": 3,
+          "prior": 6.543216468462249,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "women",
+          "probability": 0.0030333142986919935,
+          "grammar": 3,
+          "prior": 5.9380942825161975,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "times",
+          "probability": 0.003012361666332873,
+          "grammar": 3,
+          "prior": 5.897076869164403,
+          "roles": [
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 64,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 5,
+      "candidateCount": 148,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.0300099645949068,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.04977570041551115,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.04455049979488237,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "on",
+          "probability": 0.034712171446344725,
+          "grammar": 1,
+          "prior": 15.03236398742419,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "be",
+          "probability": 0.03194171149129982,
+          "grammar": 1,
+          "prior": 13.832595700925843,
+          "roles": [
+            "auxiliary",
+            "beAuxiliary",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "at",
+          "probability": 0.0300099645949068,
+          "grammar": 1,
+          "prior": 12.99603834169977,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 67,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 397,
+      "candidateCount": 2717,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005685848749411272,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004141119399366898,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0037064056841395595,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.0036301289581378467,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.003363634155733058,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.003182191813818653,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 70,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 5,
+      "candidateCount": 147,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.030493609618113256,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.05057789295747314,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.04526848223164979,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "on",
+          "probability": 0.03527159792989223,
+          "grammar": 1,
+          "prior": 15.03236398742419,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "be",
+          "probability": 0.03245648883289273,
+          "grammar": 1,
+          "prior": 13.832595700925843,
+          "roles": [
+            "auxiliary",
+            "beAuxiliary",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "at",
+          "probability": 0.030493609618113256,
+          "grammar": 1,
+          "prior": 12.99603834169977,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 73,
+      "scenario": "recorded",
+      "label": "bread",
+      "rank": 482,
+      "candidateCount": 5158,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "bread",
+        "probability": 0.0003372710741812921,
+        "grammar": 0.7,
+        "prior": 2.8284271247461903,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "these",
+          "probability": 0.004203281766400273,
+          "grammar": 3,
+          "prior": 8.224910613248532,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "those",
+          "probability": 0.0038145587182036003,
+          "grammar": 3,
+          "prior": 7.464263932294461,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "house",
+          "probability": 0.0033438639966732364,
+          "grammar": 3,
+          "prior": 6.543216468462249,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "women",
+          "probability": 0.0030346206297563617,
+          "grammar": 3,
+          "prior": 5.9380942825161975,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "times",
+          "probability": 0.0030136589739094533,
+          "grammar": 3,
+          "prior": 5.897076869164403,
+          "roles": [
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 76,
+      "scenario": "recorded",
+      "label": "Costco",
+      "rank": 1807,
+      "candidateCount": 10129,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "Costco",
+        "probability": 0.00012198569275879861,
+        "grammar": 1,
+        "prior": 1.2570133745218284,
+        "roles": [
+          "properNoun",
+          "noun"
+        ]
+      },
+      "top5": [
+        {
+          "word": "people",
+          "probability": 0.0009232439794046445,
+          "grammar": 1,
+          "prior": 9.513656920021768,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "should",
+          "probability": 0.0007709898938857931,
+          "grammar": 1,
+          "prior": 7.944739963496288,
+          "roles": [
+            "auxiliary",
+            "modal",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "really",
+          "probability": 0.0007603754481840335,
+          "grammar": 1,
+          "prior": 7.835362380695414,
+          "roles": [
+            "adverb"
+          ]
+        },
+        {
+          "word": "before",
+          "probability": 0.0007395829415670341,
+          "grammar": 1,
+          "prior": 7.621103984351498,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "around",
+          "probability": 0.0006619452747331532,
+          "grammar": 1,
+          "prior": 6.821079134143652,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 79,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 396,
+      "candidateCount": 2716,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005695629030866439,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004148242577462245,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0037127811071195798,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.0036363731768101807,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.003369419974210675,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.0031876655316319695,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 82,
+      "scenario": "recorded",
+      "label": "bread",
+      "rank": 481,
+      "candidateCount": 5157,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "bread",
+        "probability": 0.0003385625408732372,
+        "grammar": 0.7,
+        "prior": 2.8284271247461903,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "these",
+          "probability": 0.004219376827061324,
+          "grammar": 3,
+          "prior": 8.224910613248532,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "house",
+          "probability": 0.0033566682046373515,
+          "grammar": 3,
+          "prior": 6.543216468462249,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "women",
+          "probability": 0.003046240693752461,
+          "grammar": 3,
+          "prior": 5.9380942825161975,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "times",
+          "probability": 0.003025198772260477,
+          "grammar": 3,
+          "prior": 5.897076869164403,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "water",
+          "probability": 0.002942474552744725,
+          "grammar": 3,
+          "prior": 5.735820992063307,
+          "roles": [
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 85,
+      "scenario": "recorded",
+      "label": "bread",
+      "rank": 45,
+      "candidateCount": 417,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "bread",
+        "probability": 0.004285820010261184,
+        "grammar": 0.7,
+        "prior": 2.8284271247461903,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "child",
+          "probability": 0.03198019734958863,
+          "grammar": 3,
+          "prior": 4.924577653379664,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "world",
+          "probability": 0.011232220543140875,
+          "grammar": 0.7,
+          "prior": 7.4127044951229655,
+          "roles": []
+        },
+        {
+          "word": "tired",
+          "probability": 0.008970456182863336,
+          "grammar": 1.2666666666666666,
+          "prior": 3.2716082342311243,
+          "roles": [
+            "adjective"
+          ]
+        },
+        {
+          "word": "based",
+          "probability": 0.008631260491753284,
+          "grammar": 0.7,
+          "prior": 5.696200782388286,
+          "roles": []
+        },
+        {
+          "word": "would",
+          "probability": 0.0083525478413394,
+          "grammar": 0.4,
+          "prior": 9.64646262152608,
+          "roles": [
+            "auxiliary",
+            "modal",
+            "finiteVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 88,
+      "scenario": "recorded",
+      "label": "bread",
+      "rank": 44,
+      "candidateCount": 416,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "bread",
+        "probability": 0.004321919045858109,
+        "grammar": 0.7,
+        "prior": 2.8284271247461903,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "child",
+          "probability": 0.03224956337050306,
+          "grammar": 3,
+          "prior": 4.924577653379664,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "world",
+          "probability": 0.011326828419404592,
+          "grammar": 0.7,
+          "prior": 7.4127044951229655,
+          "roles": []
+        },
+        {
+          "word": "tired",
+          "probability": 0.00904601344291871,
+          "grammar": 1.2666666666666666,
+          "prior": 3.2716082342311243,
+          "roles": [
+            "adjective"
+          ]
+        },
+        {
+          "word": "based",
+          "probability": 0.008703960740245322,
+          "grammar": 0.7,
+          "prior": 5.696200782388286,
+          "roles": []
+        },
+        {
+          "word": "third",
+          "probability": 0.007629941783009202,
+          "grammar": 0.7,
+          "prior": 4.993322195606448,
+          "roles": []
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 91,
+      "scenario": "recorded",
+      "label": "Saturday",
+      "rank": 668,
+      "candidateCount": 14029,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "Saturday",
+        "probability": 0.0001319135745760003,
+        "grammar": 0.4,
+        "prior": 3.6553258009176024,
+        "roles": [
+          "properNoun",
+          "noun"
+        ]
+      },
+      "top5": [
+        {
+          "word": "happened",
+          "probability": 0.0012436284564226125,
+          "grammar": 3,
+          "prior": 4.59479341998814,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "finished",
+          "probability": 0.0010385391002158742,
+          "grammar": 3,
+          "prior": 3.8370564773010587,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "answered",
+          "probability": 0.0006757471998119608,
+          "grammar": 3,
+          "prior": 2.496661097803224,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "listened",
+          "probability": 0.0006261392882016098,
+          "grammar": 3,
+          "prior": 2.3133763678105748,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "finishes",
+          "probability": 0.0005050700969530366,
+          "grammar": 3,
+          "prior": 1.8660659830736148,
+          "roles": [
+            "verb",
+            "finiteVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 94,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 4,
+      "candidateCount": 146,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.03151652537189785,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.05227454101414329,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.0467870247789108,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "on",
+          "probability": 0.036454792495425443,
+          "grammar": 1,
+          "prior": 15.03236398742419,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "at",
+          "probability": 0.03151652537189785,
+          "grammar": 1,
+          "prior": 12.99603834169977,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "he",
+          "probability": 0.0312988248290827,
+          "grammar": 1,
+          "prior": 12.906268147554025,
+          "roles": [
+            "subjectPronoun",
+            "pronoun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 97,
+      "scenario": "recorded",
+      "label": "bread",
+      "rank": 44,
+      "candidateCount": 415,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "bread",
+        "probability": 0.0043285331706439875,
+        "grammar": 0.7,
+        "prior": 2.8284271247461903,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "child",
+          "probability": 0.032298917056714976,
+          "grammar": 3,
+          "prior": 4.924577653379664,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "world",
+          "probability": 0.011344162630388014,
+          "grammar": 0.7,
+          "prior": 7.4127044951229655,
+          "roles": []
+        },
+        {
+          "word": "tired",
+          "probability": 0.009059857168608932,
+          "grammar": 1.2666666666666666,
+          "prior": 3.2716082342311243,
+          "roles": [
+            "adjective"
+          ]
+        },
+        {
+          "word": "based",
+          "probability": 0.008717280999569137,
+          "grammar": 0.7,
+          "prior": 5.696200782388286,
+          "roles": []
+        },
+        {
+          "word": "third",
+          "probability": 0.0076416183985418724,
+          "grammar": 0.7,
+          "prior": 4.993322195606448,
+          "roles": []
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 100,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 395,
+      "candidateCount": 2715,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005708056838943851,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.0041572940030961585,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0037208823599895733,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.003644307708306937,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.0033767720163722626,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.0031946209873379883,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 103,
+      "scenario": "recorded",
+      "label": "at",
+      "rank": 4,
+      "candidateCount": 145,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "at",
+        "probability": 0.03242485025422605,
+        "grammar": 1,
+        "prior": 12.99603834169977,
+        "roles": [
+          "preposition"
+        ]
+      },
+      "top5": [
+        {
+          "word": "to",
+          "probability": 0.053781124171872044,
+          "grammar": 1,
+          "prior": 21.55573722985104,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "in",
+          "probability": 0.04813545447651586,
+          "grammar": 1,
+          "prior": 19.29292524305216,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "on",
+          "probability": 0.03750544115396163,
+          "grammar": 1,
+          "prior": 15.03236398742419,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "at",
+          "probability": 0.03242485025422605,
+          "grammar": 1,
+          "prior": 12.99603834169977,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "he",
+          "probability": 0.03220087545314156,
+          "grammar": 1,
+          "prior": 12.906268147554025,
+          "roles": [
+            "subjectPronoun",
+            "pronoun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 106,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 394,
+      "candidateCount": 2714,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005720801862695644,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004166576463363749,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0037291903946489596,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.003652444766085395,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.0033843117169686946,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.003201753978741264,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 109,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 393,
+      "candidateCount": 2713,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005729125287925743,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004172638583411018,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0037346161440742396,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.003657758855202135,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.003389235688504087,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.0032064123396645817,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 112,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 392,
+      "candidateCount": 2712,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005746316476831771,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004185159276277549,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0037458224780951748,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.003668734566203778,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.0033994056512889684,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.0032160337107241333,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 115,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 392,
+      "candidateCount": 2711,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005747361553775812,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004185920427092061,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0037465037271569197,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.0036694017953625632,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.0034000238978620437,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.0032166186076221528,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 118,
+      "scenario": "recorded",
+      "label": "milk",
+      "rank": 391,
+      "candidateCount": 2710,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "milk",
+        "probability": 0.0005758375096078836,
+        "grammar": 0.7,
+        "prior": 3.160165247453509,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "that",
+          "probability": 0.004193941814170204,
+          "grammar": 1,
+          "prior": 16.1112888009075,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun",
+            "conjunction"
+          ]
+        },
+        {
+          "word": "with",
+          "probability": 0.0037536830696954754,
+          "grammar": 1,
+          "prior": 14.42000740177328,
+          "roles": [
+            "preposition"
+          ]
+        },
+        {
+          "word": "this",
+          "probability": 0.0036764333891681537,
+          "grammar": 1,
+          "prior": 14.123247940650481,
+          "roles": [
+            "determiner",
+            "subjectPronoun",
+            "pronoun",
+            "objectPronoun"
+          ]
+        },
+        {
+          "word": "have",
+          "probability": 0.003406539288738366,
+          "grammar": 1,
+          "prior": 13.086432936924497,
+          "roles": [
+            "auxiliary",
+            "haveAuxiliary",
+            "finiteVerb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "from",
+          "probability": 0.003222782542982104,
+          "grammar": 1,
+          "prior": 12.380519948339119,
+          "roles": [
+            "preposition"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 121,
+      "scenario": "recorded",
+      "label": "Costco",
+      "rank": 642,
+      "candidateCount": 10128,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "Costco",
+        "probability": 0.00024334624377534442,
+        "grammar": 3,
+        "prior": 1.2570133745218284,
+        "roles": [
+          "properNoun",
+          "noun"
+        ]
+      },
+      "top5": [
+        {
+          "word": "people",
+          "probability": 0.0018417565978049242,
+          "grammar": 3,
+          "prior": 9.513656920021768,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "little",
+          "probability": 0.0013023185796029269,
+          "grammar": 3,
+          "prior": 6.727171322029716,
+          "roles": [
+            "determiner",
+            "adjective",
+            "properNoun",
+            "noun"
+          ]
+        },
+        {
+          "word": "school",
+          "probability": 0.001266706609557727,
+          "grammar": 3,
+          "prior": 6.543216468462249,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "family",
+          "probability": 0.0012235579322610287,
+          "grammar": 3,
+          "prior": 6.320330494907018,
+          "roles": [
+            "noun"
+          ]
+        },
+        {
+          "word": "person",
+          "probability": 0.001133734173064336,
+          "grammar": 3,
+          "prior": 5.856342783782501,
+          "roles": [
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 124,
+      "scenario": "recorded",
+      "label": "cheese",
+      "rank": 19,
+      "candidateCount": 335,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "cheese",
+        "probability": 0.006059173892386486,
+        "grammar": 0.7,
+        "prior": 2.9690471412580988,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "should",
+          "probability": 0.02316210202818429,
+          "grammar": 1,
+          "prior": 7.944739963496288,
+          "roles": [
+            "auxiliary",
+            "modal",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "though",
+          "probability": 0.016491997961837583,
+          "grammar": 1,
+          "prior": 5.656854249492381,
+          "roles": [
+            "conjunction"
+          ]
+        },
+        {
+          "word": "things",
+          "probability": 0.013633849995668669,
+          "grammar": 0.7,
+          "prior": 6.680703355426956,
+          "roles": []
+        },
+        {
+          "word": "change",
+          "probability": 0.01186895579362422,
+          "grammar": 0.7,
+          "prior": 5.8158900692812425,
+          "roles": []
+        },
+        {
+          "word": "thanks",
+          "probability": 0.010997632745476752,
+          "grammar": 0.7,
+          "prior": 5.38893430746276,
+          "roles": []
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 127,
+      "scenario": "recorded",
+      "label": "Saturday",
+      "rank": 667,
+      "candidateCount": 14028,
+      "failure": "ranking-or-insufficient-context",
+      "answerAnalysis": {
+        "word": "Saturday",
+        "probability": 0.0001319336685195913,
+        "grammar": 0.4,
+        "prior": 3.6553258009176024,
+        "roles": [
+          "properNoun",
+          "noun"
+        ]
+      },
+      "top5": [
+        {
+          "word": "happened",
+          "probability": 0.0012438178940914182,
+          "grammar": 3,
+          "prior": 4.59479341998814,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "finished",
+          "probability": 0.0010386972973245785,
+          "grammar": 3,
+          "prior": 3.8370564773010587,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "answered",
+          "probability": 0.0006758501340714442,
+          "grammar": 3,
+          "prior": 2.496661097803224,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "listened",
+          "probability": 0.0006262346658576067,
+          "grammar": 3,
+          "prior": 2.3133763678105748,
+          "roles": [
+            "verb",
+            "finiteVerb",
+            "pastParticiple"
+          ]
+        },
+        {
+          "word": "finishes",
+          "probability": 0.0005051470325532604,
+          "grammar": 3,
+          "prior": 1.8660659830736148,
+          "roles": [
+            "verb",
+            "finiteVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 130,
+      "scenario": "recorded",
+      "label": "cheese",
+      "rank": 18,
+      "candidateCount": 334,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "cheese",
+        "probability": 0.0061607774210579065,
+        "grammar": 0.7,
+        "prior": 2.9690471412580988,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "should",
+          "probability": 0.023550496772964273,
+          "grammar": 1,
+          "prior": 7.944739963496288,
+          "roles": [
+            "auxiliary",
+            "modal",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "things",
+          "probability": 0.01386246981968088,
+          "grammar": 0.7,
+          "prior": 6.680703355426956,
+          "roles": []
+        },
+        {
+          "word": "change",
+          "probability": 0.012067980910198709,
+          "grammar": 0.7,
+          "prior": 5.8158900692812425,
+          "roles": []
+        },
+        {
+          "word": "thanks",
+          "probability": 0.011182047042511013,
+          "grammar": 0.7,
+          "prior": 5.38893430746276,
+          "roles": []
+        },
+        {
+          "word": "choose",
+          "probability": 0.01114006377812466,
+          "grammar": 1,
+          "prior": 3.7580909968560476,
+          "roles": [
+            "verb",
+            "baseVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 133,
+      "scenario": "recorded",
+      "label": "cheese",
+      "rank": 18,
+      "candidateCount": 333,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "cheese",
+        "probability": 0.006173587624950662,
+        "grammar": 0.7,
+        "prior": 2.9690471412580988,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "should",
+          "probability": 0.023599465700880114,
+          "grammar": 1,
+          "prior": 7.944739963496288,
+          "roles": [
+            "auxiliary",
+            "modal",
+            "finiteVerb"
+          ]
+        },
+        {
+          "word": "things",
+          "probability": 0.013891294276841154,
+          "grammar": 0.7,
+          "prior": 6.680703355426956,
+          "roles": []
+        },
+        {
+          "word": "change",
+          "probability": 0.012093074057616292,
+          "grammar": 0.7,
+          "prior": 5.8158900692812425,
+          "roles": []
+        },
+        {
+          "word": "thanks",
+          "probability": 0.0112052980533434,
+          "grammar": 0.7,
+          "prior": 5.38893430746276,
+          "roles": []
+        },
+        {
+          "word": "choose",
+          "probability": 0.011163227492478028,
+          "grammar": 1,
+          "prior": 3.7580909968560476,
+          "roles": [
+            "verb",
+            "baseVerb"
+          ]
+        }
+      ]
+    },
+    {
+      "puzzle": 11,
+      "event": 136,
+      "scenario": "recorded",
+      "label": "cheese",
+      "rank": 17,
+      "candidateCount": 332,
+      "failure": "lexical-coverage",
+      "answerAnalysis": {
+        "word": "cheese",
+        "probability": 0.006322802382919821,
+        "grammar": 0.7,
+        "prior": 2.9690471412580988,
+        "roles": []
+      },
+      "top5": [
+        {
+          "word": "things",
+          "probability": 0.014227044935829132,
+          "grammar": 0.7,
+          "prior": 6.680703355426956,
+          "roles": []
+        },
+        {
+          "word": "change",
+          "probability": 0.012385361982925322,
+          "grammar": 0.7,
+          "prior": 5.8158900692812425,
+          "roles": []
+        },
+        {
+          "word": "thanks",
+          "probability": 0.011476128555569452,
+          "grammar": 0.7,
+          "prior": 5.38893430746276,
+          "roles": []
+        },
+        {
+          "word": "choose",
+          "probability": 0.011433041155073946,
+          "grammar": 1,
+          "prior": 3.7580909968560476,
+          "roles": [
+            "verb",
+            "baseVerb"
+          ]
+        },
+        {
+          "word": "thinks",
+          "probability": 0.010447872579273647,
+          "grammar": 1,
+          "prior": 3.434261745751016,
+          "roles": [
+            "verb",
+            "finiteVerb"
+          ]
+        }
+      ]
+    }
+  ]
+}

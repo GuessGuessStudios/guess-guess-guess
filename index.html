@@ -9,52 +9,134 @@
 </head>
 
 
-<body>
+<body data-active-test-character="human" data-static-students="true">
   <div id="game-root">
-    <h1>Guess Guess Guess</h1>
+    <h1>Guess <span id="adminAccessTrigger" role="button" tabindex="0" aria-label="Guess">Guess</span> Guess</h1>
+    <form id="adminAccessForm" class="hidden" aria-label="Administrator access">
+      <input id="adminAccessPassword" type="password" autocomplete="off" aria-label="Password" aria-describedby="adminAccessError">
+      <span id="adminAccessError" role="alert"></span>
+    </form>
 
-    <!-- ADMIN PANEL (temporary) -->
-    <section id="adminPanel" class="hidden" style="max-width: 900px; margin: 12px auto; padding: 8px;">
-      <div style="display:flex; gap:8px; align-items:flex-start; justify-content:center; flex-wrap:wrap;">
-           
- 
-        <textarea
-          id="adminText"
-          rows="2"
-          placeholder="ADMIN: type a puzzle here (words separated by spaces)..."
-          style="width: min(820px, 92vw); font-size: 16px; padding: 8px;"
-        ></textarea>
-
-        <button
-          id="loadPuzzleBtn"
-          style="font-size: 16px; padding: 10px 14px; cursor: pointer;"
-          type="button"
-        >
-          Load Puzzle
-        </button>
-        <div style="margin-top: 8px; font-size: 14px;">
-  <div style="font-weight: 600; margin-bottom: 4px;">Optional puzzle image</div>
-  <input id="adminImageInput" type="file" accept="image/*">
-</div>
-
+    <!-- ADMIN INTERFACE -->
+    <section id="adminPanel" class="hidden" aria-label="Administrator interface">
+      <div id="adminMainMenu" class="admin-screen">
+        <h2>Admin Main Menu</h2>
+        <div class="admin-menu-choices">
+          <button type="button" data-admin-screen="adminCreateGame">Create Puzzle</button>
+          <button id="closeAdminPanelBtn" type="button">Close and Log Out</button>
+        </div>
+      </div>
+      <div id="adminCreateGame" class="admin-screen hidden">
+        <div class="create-game-header">
+          <h2>Create Puzzle</h2>
+          <button type="button" class="admin-back-btn">Back</button>
+        </div>
+        <form id="createPuzzleForm" class="create-game-form">
+          <label for="createPuzzleText">Puzzle:</label>
+          <input id="createPuzzleText" type="text" autocomplete="off" placeholder="Type or paste the complete puzzle">
+          <button id="createPuzzleBtn" type="submit">Create Puzzle</button>
+          <button id="importPuzzleImageBtn" type="button" disabled>Select Image</button>
+          <input id="createPuzzleImage" class="hidden" type="file" accept="image/jpeg,image/png">
+          <div id="createGameStatus" class="create-game-status" aria-live="polite"></div>
+        </form>
+        <button id="openEditPuzzleBtn" type="button" class="edit-puzzle-open-btn">Edit Puzzle</button>
+        <section id="editPuzzlePanel" class="edit-puzzle-panel hidden" aria-label="Edit existing puzzle">
+          <h3>Edit Puzzle</h3>
+          <label for="editPuzzleSelector">Puzzle:</label>
+          <select id="editPuzzleSelector" aria-label="Puzzle to edit"></select>
+          <label for="editPuzzleText">Text:</label>
+          <textarea id="editPuzzleText" rows="4" autocomplete="off"></textarea>
+          <div id="editPuzzleCurrentImage" class="edit-puzzle-current-image">
+            <img id="editPuzzleCurrentImagePreview" class="edit-puzzle-image-preview" alt="Current puzzle image preview">
+            <span id="editPuzzleCurrentImageLabel"></span>
+          </div>
+          <div class="edit-puzzle-image-actions">
+            <button id="removeEditPuzzleImageBtn" type="button">Remove Image</button>
+            <button id="chooseEditPuzzleImageBtn" type="button">Choose New Image</button>
+          </div>
+          <input id="editPuzzleImage" class="hidden" type="file" accept="image/jpeg,image/png">
+          <div id="editPuzzleSelectedImage" class="edit-puzzle-selected-image" aria-live="polite"></div>
+          <div class="edit-puzzle-actions">
+            <button id="savePuzzleChangesBtn" type="button">Save Changes</button>
+            <button id="cancelPuzzleEditBtn" type="button">Cancel</button>
+          </div>
+          <div id="editPuzzleStatus" class="create-game-status" aria-live="polite"></div>
+        </section>
       </div>
     </section>
 
     <!-- PUZZLE RENDER AREA -->
+    <div id="currentPuzzleNumber" aria-live="polite">Puzzle 1</div>
+    <div id="teacherMessage" role="status" aria-live="polite"></div>
     <section id="puzzleArea"></section>
+
+    <div id="teacherSpeech" class="teacher-speech-bubble" role="status" aria-live="polite"></div>
+
+    <!-- STUDENT ANIMATION PROTOTYPE -->
+    <div id="studentStageRow">
+      <section data-student="character1" id="characterOneStage" class="student-stage" aria-label="Character 1">
+        <div id="characterOneSpeech" class="student-speech-bubble" role="status" aria-live="polite"></div>
+        <span id="characterOneHandRaise" class="ai-hand-indicator" aria-hidden="true" hidden>✋</span>
+        <img
+          id="characterOneImage"
+          class="student-image"
+          src="assets/images/Character One Images Folder/Character01_Image01.png"
+          alt="Character 1 sitting idle"
+        >
+        <img class="student-name-card" src="assets/images/desk-card-misaki.svg" alt="Misaki" draggable="false">
+        <div id="characterOneScore" class="student-score-plate" aria-live="polite">0 points</div>
+      </section>
+
+      <section data-student="character2" id="characterTwoStage" class="student-stage" aria-label="Character 2">
+        <div id="characterTwoSpeech" class="student-speech-bubble" role="status" aria-live="polite"></div>
+        <span id="characterTwoHandRaise" class="ai-hand-indicator" aria-hidden="true" hidden>✋</span>
+        <img
+          id="characterTwoImage"
+          class="student-image"
+          src="assets/images/Character Two Images Folder/Character02_Image01.png"
+          alt="Character 2 sitting idle"
+        >
+        <img class="student-name-card" src="assets/images/desk-card-aoi.svg" alt="Aoi" draggable="false">
+        <div id="characterTwoScore" class="student-score-plate" aria-live="polite">0 points</div>
+      </section>
+
+      <!-- Static artwork with selection, speech, and scoring. -->
+      <section data-student="character3" id="characterThreeStage" class="student-stage student-stage-static" aria-label="Character 3: Taiga">
+        <div id="characterThreeSpeech" class="student-speech-bubble" role="status" aria-live="polite"></div>
+        <span id="characterThreeHandRaise" class="ai-hand-indicator" aria-hidden="true" hidden>✋</span>
+        <img id="characterThreeImage" class="student-image" src="assets/images/Character Three Images Folder/Character03_Image01.png" alt="Taiga, boy without glasses, seated at his desk" draggable="false">
+        <img class="student-name-card" src="assets/images/desk-card-taiga.svg" alt="Taiga" draggable="false">
+        <div id="characterThreeScore" class="student-score-plate" aria-live="polite">0 points</div>
+      </section>
+
+      <!-- Static artwork with selection, speech, and scoring. -->
+      <section data-student="character4" id="characterFourStage" class="student-stage student-stage-static" aria-label="Character 4: Sho">
+        <div id="characterFourSpeech" class="student-speech-bubble" role="status" aria-live="polite"></div>
+        <span id="characterFourHandRaise" class="ai-hand-indicator" aria-hidden="true" hidden>✋</span>
+        <img id="characterFourImage" class="student-image" src="assets/images/Character Four Images Folder/Character04_Image01.png" alt="Sho, boy with glasses, seated at his desk" draggable="false">
+        <img class="student-desk-replacement" src="assets/images/Character Four Images Folder/Character04_MatchingDesk.png" alt="" aria-hidden="true" draggable="false">
+        <img class="student-name-card" src="assets/images/desk-card-sho.svg" alt="Sho" draggable="false">
+        <div id="characterFourScore" class="student-score-plate" aria-live="polite">0 points</div>
+      </section>
+    </div>
+    <div id="myPointsPlate" aria-label="My Points">
+      <span>My Points</span>
+      <span id="myPointsValue" aria-live="polite">0 points</span>
+    </div>
+    <button id="humanRaiseHandBtn" type="button">Raise Hand</button>
 
     <!-- CONTROLS -->
     <div id="controls">
-      <div id="statsRow">
-        <div id="strikeDisplay">Strikes: 0</div>
-        <div id="scoreDisplay">Score: 0</div>
-      </div>
+      <button id="startGameBtn" type="button">Start Game</button>
+      <small><a href="?humanPlaytestMode=1">Human playtest ON</a> · <a href="?">Normal mode</a></small>
+      <div id="runtimeBuildMarker" aria-live="polite" style="font-size:0.75rem;opacity:0.72;margin-top:0.35rem;"></div>
 
       <div id="message"></div>
 
-      <!-- WIN BANNER (anchored under strike counter) -->
+      <!-- WIN BANNER -->
       <div id="winBanner" class="hidden" role="status" aria-live="polite">
         <img id="endingImage" alt="">
+        <div id="winnerResult" aria-live="polite"></div>
       </div>
     </div>
 
@@ -79,16 +161,25 @@
   </button>
   </div>
 
-  <button
-    id="nextPuzzleBtn"
-    type="button"
-  >
-    Next Puzzle
-  </button>
+  <div id="puzzleNavigation" aria-label="Puzzle navigation">
+    <button id="previousPuzzleBtn" type="button" disabled>Previous Puzzle</button>
+    <button id="nextPuzzleBtn" type="button">Next Puzzle</button>
+  </div>
 </div>
   </div>
 
   <script src="hints.js"></script>
+  <script src="student-animation.js"></script>
+  <script src="assets/dictionary/dictionary-manager.js"></script>
+  <script src="vaults/vault-4.js"></script>
+  <script src="human-playtest-eligibility.js"></script>
+  <script src="human-playtest.js"></script>
+  <script src="proper-noun-bank.js"></script>
+  <script src="public-board.js"></script>
+  <script src="situation-pilot.js"></script>
+  <script src="candidate-providers.js"></script>
+  <script type="module" src="assets/ettin/ettin-provider.js"></script>
   <script src="game.js"></script>
+  <script src="gameplay-logger.js"></script>
 </body>
 </html>

@@ -1,0 +1,27 @@
+// Fixed before implementation. Held-back rows are evaluated once after development checks.
+module.exports = [
+ ['list-food','dev',['bread,','cheese,','___','milk.'],2],
+ ['list-hidden','dev',['_____,','cheese,','___','milk.'],2],
+ ['list-names','dev',['Tom,','Mary,','___','Susan.'],2],
+ ['list-adjectives','dev',['red,','green,','___','blue.'],2],
+ ['list-verbs','dev',['run,','jump,','___','swim.'],2],
+ ['comma-negative','dev',['Yesterday,','she','___','him.'],2],
+ ['possessive','dev',['his','mother','and','___','cat.'],3],
+ ['possessive-hidden','dev',['his','______','and','___','cat.'],3],
+ ['number','dev',['two','____.'],1],
+ ['any','dev',['any','____.'],1],
+ ['direct','dev',['Nobody','_____','him.'],1],
+ ['optional','dev',['Who','______','him?'],1],
+ ['preposition','dev',['Nobody','_____','at','him.'],1],
+ ['particle','dev',['Nobody','_____','him','over.'],1],
+ ['ambiguous','dev',['_____','_____','____.'],1],
+ ['unsupported','dev',[{pattern:'Qzxqzxqzx___',capital:true}],0],
+ ['new-food-list','held-back',['apples,','oranges,','___','bananas.'],2],
+ ['new-adjective-list','held-back',['slow,','careful,','___','quiet.'],2],
+ ['new-verb-list','held-back',['read,','write,','___','speak.'],2],
+ ['new-possessive','held-back',['our','teacher','and','___','principal.'],3],
+ ['possessive-alternative','held-back',['my','car','and','_','bicycle.'],3],
+ ['direct-determiner','held-back',['They','____','the','teacher.'],1],
+ ['comma-clause','held-back',['After','dinner,','we','____','home.'],3],
+ ['unknown-complement','held-back',['She','_____','____','John.'],1]
+].map(([id,split,tokens,target])=>({id,split,tokens,target}));

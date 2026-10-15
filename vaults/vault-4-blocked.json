@@ -1,0 +1,22 @@
+{
+  "scope": "global",
+  "name": "G-rated blocked words",
+  "absoluteWords": [
+    "fuck", "fucking", "fucked", "fucker", "fuckers", "motherfucker", "motherfuckers", "motherfucking",
+    "shit", "shits", "shitty", "bullshit", "bitch", "bitches", "cunt", "cunts", "cock", "cocks",
+    "dicks", "dickhead", "pussy", "pussies", "clit", "clitoris", "ass", "asses", "asshole", "assholes",
+    "arse", "arses", "arsehole", "bastard", "bastards", "whore", "whores", "slut", "sluts", "slutty",
+    "tits", "titty", "titties", "boob", "boobs", "penis", "penises", "vagina", "vaginas", "vulva",
+    "testicles", "anus", "breasts", "butt", "dildo", "dildos", "cum", "cumming", "jizz", "semen",
+    "horny", "erection", "orgasm", "orgasms", "masturbate", "masturbation", "porn", "porno",
+    "pornography", "sex", "sexual", "rape", "rapist", "molest", "molester", "incest", "nude", "nudes",
+    "jackass", "dumbass", "smartass", "jerkoff", "wanker", "wankers", "prick", "pricks", "twat", "twats",
+    "piss", "pissed", "pissing", "damn", "damned", "hell", "goddamn", "goddamned", "crap", "crappy",
+    "screw", "screwed", "screwing", "fag", "fags", "faggot", "faggots", "dyke", "dykes", "tranny",
+    "trannies", "retard", "retarded", "retards", "nigger", "niggers", "nigga", "niggas", "kike", "kikes",
+    "spic", "spics", "chink", "chinks", "gook", "gooks", "wetback", "wetbacks", "coon", "coons",
+    "cracker", "crackers", "honky", "honkies", "raghead", "ragheads", "towelhead", "towelheads", "cripple",
+    "cripples"
+  ],
+  "recognizedNameOnlyWords": ["dick"]
+}

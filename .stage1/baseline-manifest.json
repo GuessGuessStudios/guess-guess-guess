@@ -1,0 +1,48 @@
+{
+  "format": "ggg-stage1-baseline-v1",
+  "purpose": "Offline dependency snapshot for the completed Stage 1 maximum-accuracy predictor, with credential-redacted historical admin access.",
+  "source": "STAGE1_FINAL_CLOSEOUT.md and .stage1/heldout-freeze.json",
+  "files": {
+  ".stage1/baseline/.stage1/inspection.json": "515bc3ca5d0eb9b0f3edac5f9ff61588182d23cd656fc0e2637756b9d84bf92d",
+  ".stage1/baseline/ai-logic-settings.json": "2829fe3892712699277d6b41ed93881fa6feabe4e213adb4b0abdeb7b6b89cf6",
+  ".stage1/baseline/assets/dictionary/dictionary-manager.js": "bbe40e326182ce02d50f16747d1b5e1e55332ad848411cb8e0f60c2400ab56e7",
+  ".stage1/baseline/assets/dictionary/en_US-size-60.txt": "4ff7e0b6d86763e1e042ffd746e94cdf4432618702deac303a1669e2a838db04",
+  ".stage1/baseline/assets/language/english-frequency.json": "4389139981da53a9cce2e7446ce041e9fa2607bbc09cefb69207b81fa4ea5156",
+  ".stage1/baseline/game.js": "ccbec19fe3432ac788110e142fc88f741da197fe8be6b993fc3ef2f032bcf575",
+  ".stage1/baseline/gameplay-logs/gameplay-20260915082903-17894602.json": "2cb57803a327f1e252fc7e65134be1f9e9b8bc836630eba58f09a87fe4f02c5d",
+  ".stage1/baseline/puzzles/puzzle-001.json": "9a5488e4b5a5abb79eacb240855bb8f5c844fb54a69e39f9572ac105dc8f376b",
+  ".stage1/baseline/puzzles/puzzle-002.json": "9dd56fcef1720509dede2892d7b56435d73b6610e4c68e10aa9777ca529a3ab3",
+  ".stage1/baseline/puzzles/puzzle-003.json": "dc07ce223f966b8c8ebdfb9156b76c26a9c24ff2d90d3aa9f1496f2c8e3beebe",
+  ".stage1/baseline/puzzles/puzzle-004.json": "47336fe6b03529d24bec342c0c6e8b1497b370cba1275e48a9914876123b4f3c",
+  ".stage1/baseline/puzzles/puzzle-005.json": "ff65ea005fcfaf72f045671564e201c2d09ee580b7ad5435d24eae1ff69a3f07",
+  ".stage1/baseline/puzzles/puzzle-006.json": "5bc7446516aa8412a1eee4e2571335d6a26359f19bc791621490462c70de01b7",
+  ".stage1/baseline/puzzles/puzzle-007.json": "5814ed6be0f2e162df4243f692a62e4d769164ceb0c9c2d708730e1009421894",
+  ".stage1/baseline/puzzles/puzzle-008.json": "ae0781a6f53b5107f1a5de822f45155c7bb583aaea0d0a1091013da752112f2f",
+  ".stage1/baseline/puzzles/puzzle-009.json": "d476cd1e7bbf436e7c94c5b52adab84b43c4aa119b28f25576878e97f4e667bd",
+  ".stage1/baseline/puzzles/puzzle-010.json": "dfb9f70a25d6d6d8b97653b739afbfb8ecfe5e1fa010097d72c620a87a923ba7",
+  ".stage1/baseline/puzzles/puzzle-011.json": "5b150f201e5e969a2b38dc8736ecf05eddbc9a39660321f53aeeebb10138d21f",
+  ".stage1/baseline/tests/ai-harness.cjs": "c64e227d9e001aa1f1f3ed6aed58cc0c61299c431672056d40421792356aafdd",
+  ".stage1/baseline/tests/build-word-frequency.cjs": "2406f88decf647895b7b8a971106e29aade718c353a0a97ee81c13665c88a83e",
+  ".stage1/baseline/tests/maximum-accuracy.test.cjs": "228ad7fcd92e8dd914ba8ae4fe4fba85660465380797c74141d3b9a93055f96f",
+  ".stage1/baseline/tests/prediction-eval.cjs": "2ab57237b638b352550658860c73683bb98ebf7761291e91e44ff505f0efca55",
+  ".stage1/baseline/vaults/vault-1.json": "9d2b74f7ad1fad380f7aaafae0954fbcc177fd37e97186302916176ef1cd4c43",
+  ".stage1/baseline/vaults/vault-2.json": "c10b363d06de53e3c8c0163d8d62032049e224fc62134efceccf5886a4e44b7d",
+  ".stage1/baseline/vaults/vault-3.json": "8e494e1a6dd8da592e8b74be827a7ea3752f11a6b87abee0852a146a17150f58",
+  ".stage1/baseline/vaults/vault-4-blocked.json": "6fcca3165764dc6ec065182268c17de61303a9177cf4c86ab1f6c177d1a1d836",
+  ".stage1/baseline/vaults/vault-4.js": "f0c1299506f821430b0ea8966927b0a2a743e1cf2ad2052be69d9f4707d4158b",
+  ".stage1/baseline/vaults/vault-5.json": "0a17a993e6d877f7530c8647dad5ae123e0a717b2b34cd52c5a2baf5c2759475"
+}
+,
+  "exclusions": [
+    "Production gameplay files outside this snapshot.",
+    "Hidden answer labels and correctness outcomes from the predictor interface.",
+    "V2/V3/V5 answer-derived sources during maximum-accuracy prediction."
+  ],
+  "sanitization": {
+    "date": "2026-10-15",
+    "file": ".stage1/baseline/game.js",
+    "reason": "Administrator credential redacted and historical admin access disabled. Historical inference implementation preserved. The active hash describes the sanitized snapshot.",
+    "originalSha256": "10afb8b7462e7def480779b3f7a6468c1db2be236ea8e2fc78f50943daa46fed",
+    "sanitizedSha256": "ccbec19fe3432ac788110e142fc88f741da197fe8be6b993fc3ef2f032bcf575"
+  }
+}

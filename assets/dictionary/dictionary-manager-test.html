@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dictionary Manager Test</title>
+  <style>
+    body { max-width: 760px; margin: 32px auto; padding: 0 20px; font: 16px/1.45 system-ui, sans-serif; }
+    .pass { color: #176b2c; }
+    .fail { color: #a00000; }
+  </style>
+</head>
+<body>
+  <h1>Dictionary Manager Test</h1>
+  <p>This development page does not change or run normal gameplay.</p>
+  <div id="summary">Loading the local dictionary…</div>
+  <ol id="results"></ol>
+
+  <script src="dictionary-manager.js"></script>
+  <script>
+    (async () => {
+      const results = document.getElementById("results");
+      const checks = [];
+      const check = (name, passed) => checks.push({ name, passed: Boolean(passed) });
+
+      try {
+        const manager = await new DictionaryManager({
+          ...DEFAULT_DICTIONARY_SOURCE,
+          wordListUrl: "en_US-size-60.txt",
+        }).load();
+
+        ["apple", "house", "teacher", "beautiful", "computer"].forEach((word) => {
+          check(`${word} is accepted`, manager.isAccepted(word));
+        });
+
+        ["qzxqzx", "notawordxyz", "blorptastic"].forEach((word) => {
+          check(`${word} is absent`, !manager.isAccepted(word));
+        });
+
+        check("HOUSE, House, and house agree",
+          manager.isAccepted("HOUSE") && manager.isAccepted("House") && manager.isAccepted("house"));
+
+        [3, 5, 6, 8].forEach((length) => {
+          const words = manager.getWordsByLength(length);
+          check(`${length}-letter group is nonempty and contains only ${length}-letter words`,
+            words.length > 0 && words.every((word) => /^[a-z]+$/.test(word) && word.length === length));
+          check(`${length}-letter group has no duplicates`, new Set(words).size === words.length);
+        });
+
+        check("usable accepted-word representation has no duplicates",
+          manager.getStats().acceptedWordCount === manager.acceptedWords.size);
+
+        checks.forEach(({ name, passed }) => {
+          const item = document.createElement("li");
+          item.className = passed ? "pass" : "fail";
+          item.textContent = `${passed ? "PASS" : "FAIL"}: ${name}`;
+          results.appendChild(item);
+        });
+
+        const failed = checks.filter((item) => !item.passed).length;
+        document.getElementById("summary").textContent = failed
+          ? `${failed} check(s) failed.`
+          : `All ${checks.length} checks passed. ${manager.getStats().acceptedWordCount.toLocaleString()} unique normalized entries loaded offline.`;
+      } catch (error) {
+        document.getElementById("summary").className = "fail";
+        document.getElementById("summary").textContent = `TEST ERROR: ${error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>

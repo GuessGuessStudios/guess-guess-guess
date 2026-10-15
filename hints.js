@@ -37,7 +37,8 @@ window.Hints = {
         const letter = (block.dataset.letter || "").toUpperCase();
         if (!letter) return;
 
-        const isHidden = (block.textContent || "").trim() === "";
+        // Preview letters are temporary; only the public reveal flag is authoritative.
+        const isHidden = block.dataset.revealed !== "true";
         if (!isHidden) return;
 
         const isVowel = ["A", "E", "I", "O", "U"].includes(letter);

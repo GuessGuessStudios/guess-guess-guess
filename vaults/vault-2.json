@@ -1,0 +1,132 @@
+{
+  "scope": "puzzle-specific",
+  "name": "Correct Word Occurrences",
+  "puzzles": {
+    "1": [
+      "Hello",
+      "world"
+    ],
+    "2": [
+      "The",
+      "cat",
+      "sat",
+      "on",
+      "the",
+      "mat"
+    ],
+    "3": [
+      "Making",
+      "this",
+      "game",
+      "has",
+      "driven",
+      "me",
+      "to",
+      "the",
+      "point",
+      "of",
+      "madness",
+      "many",
+      "times"
+    ],
+    "4": [
+      "Who",
+      "does",
+      "Susan",
+      "love",
+      "She",
+      "loves",
+      "Tom"
+    ],
+    "5": [
+      "Who",
+      "loves",
+      "Susan",
+      "Tom",
+      "and",
+      "Seymour",
+      "love",
+      "Susan"
+    ],
+    "6": [
+      "Poor",
+      "Seymour",
+      "Who",
+      "loves",
+      "him",
+      "Maybe",
+      "nobody",
+      "loves",
+      "him"
+    ],
+    "7": [
+      "Don't",
+      "worry",
+      "His",
+      "mother",
+      "and",
+      "his",
+      "cat",
+      "Percy",
+      "love",
+      "him"
+    ],
+    "8": [
+      "Kyu",
+      "Sakamoto",
+      "sang",
+      "the",
+      "Sukiyaki",
+      "Song"
+    ],
+    "9": [
+      "Not",
+      "all",
+      "Canadians",
+      "like",
+      "maple",
+      "syrup",
+      "and",
+      "not",
+      "all",
+      "Japanese",
+      "like",
+      "sushi"
+    ],
+    "10": [
+      "If",
+      "you",
+      "don't",
+      "have",
+      "any",
+      "brains",
+      "it",
+      "pays",
+      "to",
+      "be",
+      "adorable"
+    ],
+    "13": [
+      "Take",
+      "these",
+      "humans",
+      "back",
+      "to",
+      "earth",
+      "now",
+      "They",
+      "never",
+      "stop",
+      "eating",
+      "We",
+      "will",
+      "run",
+      "out",
+      "of",
+      "food",
+      "in",
+      "no",
+      "time"
+    ]
+  }
+}
