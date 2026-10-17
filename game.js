@@ -1862,8 +1862,78 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       sourceRole: 'subject', targetRole: 'owner-complement' };
   }
 
+  // Mechanism #5: the explicit affirmative reply licenses object access only;
+  // the you-to-I construction does not establish actual speaker identities.
+  function recognizeAdjacentDialogueGroundingNomination(publicState) {
+    const engine = globalThis.GGGHumanPlaytest, targetIndex = publicState?.targetSlotIndex;
+    const base = { mechanismVersion: 'adjacent-dialogue-grounding-nomination-v1', targetSlot: targetIndex };
+    const stop = reason => ({ ...base, reason });
+    if (!publicState?.slots?.[targetIndex] || publicState.slots[targetIndex].solved) return stop('no-unresolved-target');
+    if (!globalThis.GGGPublicBoard?.snapshot) return stop('public-board-unavailable');
+    const state = globalThis.GGGPublicBoard.snapshot(publicState).state;
+    const targetSpan = entityTypeSentenceBounds(state, engine, targetIndex);
+    if (targetSpan.end - targetSpan.start !== 3 || targetIndex !== targetSpan.end ||
+        state.slots[targetSpan.end].trailing !== '.') return stop('unsupported-target-shape');
+    if (targetSpan.start === 0) return stop('unsupported-adjacent-source-shape');
+    const sourceSpan = entityTypeSentenceBounds(state, engine, targetSpan.start - 1);
+    if (sourceSpan.end - sourceSpan.start !== 3 || sourceSpan.end + 1 !== targetSpan.start ||
+        state.slots[sourceSpan.end].trailing !== '?') return stop('unsupported-adjacent-source-shape');
+    Object.assign(base, { sourceSpan, targetSpan });
+    const q = sourceSpan.start, a = targetSpan.start;
+    for (let index = q; index <= targetIndex; index++) {
+      const slot = state.slots[index];
+      if (slot.gaps?.slice(0, -1).some(Boolean)) return stop('internal-punctuation');
+      const punctuation = index === q + 3 ? '?' : index === a ? ',' : index === targetIndex ? '.' : '';
+      if (slot.trailing !== punctuation) return stop('unsupported-punctuation');
+      if (index !== targetIndex && (!slot.solved || !slot.letters?.length ||
+          slot.letters.some(letter => !/^[A-Za-z]$/.test(String(letter.visible ?? ''))))) {
+        return stop('incomplete-public-evidence');
+      }
+    }
+    const target = state.slots[targetIndex];
+    if (!target.letters.some(letter => letter.visible === null)) return stop('target-not-unresolved');
+    const word = index => engine.tokenAt(state.slots[index]);
+    const casing = index => state.slots[index].letters.map(letter => letter.capital ? 'U' : 'l').join('');
+    for (const [index, expected, pattern] of [[q, 'Do', 'Ul'], [q + 1, 'you', 'lll'],
+      [a, 'Yes', 'Ull'], [a + 1, 'I', 'U']]) {
+      if (word(index) !== expected || casing(index) !== pattern) return stop('unsupported-fixed-token');
+    }
+    const unsupportedVerbRoles = ['auxiliary', 'modal', 'contraction', 'negator', 'thirdSingular',
+      'pastTense', 'pastParticiple', 'presentParticiple'];
+    const supportedBase = analysis => analysis?.primaryVerb === true && analysis.transitive === true &&
+      analysis.roles?.includes('verb') && analysis.roles.includes('baseVerb') &&
+      !analysis.roles.some(role => unsupportedVerbRoles.includes(role));
+    const predicate = index => {
+      const surface = word(index), analysis = getHumanPlaytestAnalysis(surface);
+      if (!/^[a-z]+$/.test(surface) || !/^l+$/.test(casing(index)) || !supportedBase(analysis)) return null;
+      const lemmas = [...new Set([...(analysis.lemmas || []), surface].map(normalizeAiCandidate))]
+        .filter(lemma => lemma && supportedBase(getHumanPlaytestAnalysis(lemma)));
+      return lemmas.length === 1 ? lemmas[0] : null;
+    };
+    const sourcePredicate = predicate(q + 2), targetPredicate = predicate(a + 2);
+    if (!sourcePredicate || sourcePredicate !== targetPredicate || word(q + 2) !== word(a + 2)) {
+      return stop('predicate-alignment-unclear');
+    }
+    const nominee = word(q + 3), noun = getHumanPlaytestAnalysis(nominee), roles = noun?.roles || [];
+    const forbiddenNounRoles = ['properNoun', 'pronoun', 'subjectPronoun', 'objectPronoun',
+      'possessivePronoun', 'possessiveDeterminer', 'determiner', 'article', 'demonstrative', 'conjunction', 'preposition'];
+    if (!/^[a-z]+$/.test(nominee) || !/^l+$/.test(casing(q + 3)) || !noun?.primaryNoun ||
+        !roles.includes('noun') || noun.pluralNoun !== true || engine.subjectNumber(noun, nominee) !== 'plural' ||
+        roles.some(role => forbiddenNounRoles.includes(role))) return stop('unsupported-source-object');
+    if (!engine.matchesToken(nominee, target) || !engine.matchesCasePattern(nominee, target)) {
+      return stop('target-pattern-mismatch');
+    }
+    return { ...base, reason: 'role-aligned', nominee, relation: 'affirmative-polar-reply',
+      sourceObjectSlot: q + 3, targetObjectSlot: targetIndex, sourceRole: 'direct-object', targetRole: 'direct-object',
+      questionSubject: word(q + 1), replySubject: word(a + 1), affirmation: word(a),
+      predicate: word(q + 2), predicateLemma: sourcePredicate };
+  }
+
   function crossSentenceNominationDiagnosticType(diagnostic) {
     const providers = diagnostic?.contributingProviders || [diagnostic?.mechanismVersion];
+    if (providers.includes('adjacent-dialogue-grounding-nomination-v1')) {
+      return providers.length > 1 ? 'ettin-cross-sentence-nomination' : 'ettin-adjacent-dialogue-grounding-nomination';
+    }
     if (providers.includes('adjacent-ownership-nomination-v1')) {
       return providers.length > 1 ? 'ettin-cross-sentence-nomination' : 'ettin-adjacent-ownership-nomination';
     }
@@ -2013,19 +2083,23 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const admissionInput = { state, snapshot, targetSlot, lexicalPool, ordinary: ordinaryCandidates,
       ordinaryCap: cap, boardKey: preparationBoardKey, opportunity: ownership };
     const ownershipRecognition = recognizeAdjacentOwnershipNomination(state);
+    const dialogueRecognition = recognizeAdjacentDialogueGroundingNomination(state);
     const providerEvidence = [
       { provider: 'adjacent-qa-nomination-v1', evidence: recognizeAdjacentQaNomination(state) },
       { provider: 'adjacent-declarative-nomination-v1', evidence: recognizeAdjacentDeclarativeNomination(state) },
       { provider: 'adjacent-it-subject-nomination-v1', evidence: recognizeAdjacentItSubjectNomination(state) },
       { provider: 'adjacent-ownership-nomination-v1', evidence: ownershipRecognition },
+      { provider: 'adjacent-dialogue-grounding-nomination-v1', evidence: dialogueRecognition },
     ].filter(item => item.evidence.reason === 'role-aligned');
     logEttinPilot('ettin-adjacent-ownership-recognition', targetSlot, ownershipRecognition);
+    logEttinPilot('ettin-adjacent-dialogue-grounding-recognition', targetSlot, dialogueRecognition);
     let qaAdmission;
     if (new Set(providerEvidence.map(item => normalizeAiCandidate(item.evidence.nominee))).size > 1) {
       qaAdmission = { candidates: ordinaryCandidates, diagnostic: { mechanismVersion: 'cross-sentence-nomination-v1',
         reason: 'conflicting-provider-nominations', contributingProviders: providerEvidence.map(item => item.provider),
         nominees: [...new Set(providerEvidence.map(item => normalizeAiCandidate(item.evidence.nominee)))],
         providerNominees: providerEvidence.map(item => ({ provider: item.provider, nominee: item.evidence.nominee,
+          ...(item.provider === 'adjacent-dialogue-grounding-nomination-v1' ? { dialogueGrounding: item.evidence } : {}),
           sourceOwner: item.evidence.sourceOwner || null, repeatedAnimal: item.evidence.repeatedAnimal || null,
           antecedent: item.evidence.antecedent || null, reference: item.evidence.reference || null,
           predicateLemma: item.evidence.predicateLemma || null,
@@ -2038,8 +2112,9 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       qaAdmission = { ...generic, diagnostic: { ...generic.diagnostic,
         contributingProviders: providerEvidence.map(item => item.provider),
         ...(providerEvidence.some(item => item.provider === 'adjacent-it-subject-nomination-v1' ||
-          item.provider === 'adjacent-ownership-nomination-v1')
+          item.provider === 'adjacent-ownership-nomination-v1' || item.provider === 'adjacent-dialogue-grounding-nomination-v1')
           ? { providerNominees: providerEvidence.map(item => ({ provider: item.provider,
+            ...(item.provider === 'adjacent-dialogue-grounding-nomination-v1' ? { dialogueGrounding: item.evidence } : {}),
             nominee: item.evidence.nominee, sourceOwner: item.evidence.sourceOwner || null,
             repeatedAnimal: item.evidence.repeatedAnimal || null,
             antecedent: item.evidence.antecedent || null, reference: item.evidence.reference || null,
@@ -2154,7 +2229,11 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         entityTypeContext: entityContext,
         entitySlotCompatibilityContext,
         discoursePersonCompatibilityContext,
-        ...(qaAdmission.diagnostic.contributingProviders?.includes('adjacent-ownership-nomination-v1')
+        ...(qaAdmission.diagnostic.contributingProviders?.includes('adjacent-dialogue-grounding-nomination-v1')
+          ? (qaAdmission.diagnostic.contributingProviders.length > 1
+            ? { crossSentenceNomination: qaAdmission.diagnostic }
+            : { adjacentDialogueGroundingNomination: qaAdmission.diagnostic })
+          : qaAdmission.diagnostic.contributingProviders?.includes('adjacent-ownership-nomination-v1')
           ? (qaAdmission.diagnostic.contributingProviders.length > 1
             ? { crossSentenceNomination: qaAdmission.diagnostic }
             : { adjacentOwnershipNomination: qaAdmission.diagnostic })
