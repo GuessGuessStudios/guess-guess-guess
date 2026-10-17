@@ -1929,8 +1929,72 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       predicate: word(q + 2), predicateLemma: sourcePredicate };
   }
 
+  // One completed material transformation, restricted to the entire two-sentence
+  // board. The product licenses access only; it never authorizes a candidate.
+  function recognizeAdjacentWaterFreezingNomination(publicState) {
+    const relation = Object.freeze({ id: 'water-freezing-produces-ice', material: 'water', product: 'ice',
+      event: Object.freeze(['has', 'just', 'frozen']),
+      containers: Object.freeze(['cup', 'bowl', 'bucket', 'bottle', 'tray']) });
+    const engine = globalThis.GGGHumanPlaytest, targetIndex = publicState?.targetSlotIndex;
+    const base = { mechanismVersion: 'adjacent-water-freezing-nomination-v1', relation: relation.id,
+      targetSlot: targetIndex };
+    const stop = reason => ({ ...base, reason });
+    if (!publicState?.slots?.[targetIndex] || publicState.slots[targetIndex].solved) return stop('no-unresolved-target');
+    if (publicState.slots.length !== 13 || targetIndex !== 12) return stop('unsupported-board-shape');
+    if (!globalThis.GGGPublicBoard?.snapshot) return stop('public-board-unavailable');
+    const state = globalThis.GGGPublicBoard.snapshot(publicState).state;
+    const sourceSpan = entityTypeSentenceBounds(state, engine, 0);
+    const targetSpan = entityTypeSentenceBounds(state, engine, 12);
+    if (sourceSpan.start !== 0 || sourceSpan.end !== 7 || targetSpan.start !== 8 || targetSpan.end !== 12) {
+      return stop('unsupported-sentence-boundary');
+    }
+    Object.assign(base, { sourceSpan, targetSpan });
+    for (let index = 0; index < 13; index++) {
+      const slot = state.slots[index];
+      if (slot.gaps.slice(0, -1).some(Boolean)) return stop('internal-punctuation');
+      if (slot.trailing !== ([7, 12].includes(index) ? '.' : '')) return stop('unsupported-punctuation');
+      if (index !== targetIndex && (!slot.solved || !slot.letters.length ||
+          slot.letters.some(letter => !/^[A-Za-z]$/.test(String(letter.visible ?? ''))))) {
+        return stop('incomplete-public-evidence');
+      }
+    }
+    const target = state.slots[targetIndex];
+    if (!target.letters.some(letter => letter.visible === null)) return stop('target-not-unresolved');
+    const word = index => engine.tokenAt(state.slots[index]);
+    const casing = index => state.slots[index].letters.map(letter => letter.capital ? 'U' : 'l').join('');
+    const fixed = [[0, 'The'], [1, relation.material], [2, 'in'], [3, 'the'],
+      ...relation.event.map((token, offset) => [5 + offset, token]), [8, 'The'], [10, 'now'], [11, 'contains']];
+    for (const [index, expected] of fixed) {
+      const expectedCase = [...expected].map(letter => /[A-Z]/.test(letter) ? 'U' : 'l').join('');
+      if (word(index) !== expected || casing(index) !== expectedCase) return stop('unsupported-fixed-token');
+    }
+    const container = word(4);
+    if (container !== word(9)) return stop('container-mismatch');
+    if (!relation.containers.includes(container) || !/^l+$/.test(casing(4)) || !/^l+$/.test(casing(9))) {
+      return stop('unsupported-container');
+    }
+    const supportedNoun = surface => {
+      const analysis = getHumanPlaytestAnalysis(surface), roles = analysis?.roles || [];
+      return analysis?.primaryNoun === true && roles.includes('noun') && analysis.pluralNoun !== true &&
+        engine.subjectNumber(analysis, surface) === 'singular' &&
+        !roles.some(role => ['properNoun', 'pronoun', 'subjectPronoun', 'objectPronoun', 'possessivePronoun',
+          'possessiveDeterminer', 'determiner', 'article', 'demonstrative', 'conjunction', 'preposition'].includes(role));
+    };
+    if (!supportedNoun(word(4)) || !supportedNoun(word(9))) return stop('unsupported-container-metadata');
+    if (!supportedNoun(word(1)) || !supportedNoun(relation.product)) return stop('unsupported-material-metadata');
+    if (casing(12) !== 'lll' || !engine.matchesToken(relation.product, target) ||
+        !engine.matchesCasePattern(relation.product, target)) return stop('target-pattern-mismatch');
+    return { ...base, reason: 'role-aligned', nominee: relation.product,
+      materialSlot: 1, material: word(1), sourceContainerSlot: 4, targetContainerSlot: 9, container,
+      eventSlots: [5, 6, 7], completedEvent: relation.event.join(' '), temporalMarker: word(6),
+      targetTemporalMarker: word(10), targetPattern: word(12), targetRole: 'direct-object' };
+  }
+
   function crossSentenceNominationDiagnosticType(diagnostic) {
     const providers = diagnostic?.contributingProviders || [diagnostic?.mechanismVersion];
+    if (providers.includes('adjacent-water-freezing-nomination-v1')) {
+      return providers.length > 1 ? 'ettin-cross-sentence-nomination' : 'ettin-adjacent-water-freezing-nomination';
+    }
     if (providers.includes('adjacent-dialogue-grounding-nomination-v1')) {
       return providers.length > 1 ? 'ettin-cross-sentence-nomination' : 'ettin-adjacent-dialogue-grounding-nomination';
     }
@@ -2084,15 +2148,18 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       ordinaryCap: cap, boardKey: preparationBoardKey, opportunity: ownership };
     const ownershipRecognition = recognizeAdjacentOwnershipNomination(state);
     const dialogueRecognition = recognizeAdjacentDialogueGroundingNomination(state);
+    const freezingRecognition = recognizeAdjacentWaterFreezingNomination(state);
     const providerEvidence = [
       { provider: 'adjacent-qa-nomination-v1', evidence: recognizeAdjacentQaNomination(state) },
       { provider: 'adjacent-declarative-nomination-v1', evidence: recognizeAdjacentDeclarativeNomination(state) },
       { provider: 'adjacent-it-subject-nomination-v1', evidence: recognizeAdjacentItSubjectNomination(state) },
       { provider: 'adjacent-ownership-nomination-v1', evidence: ownershipRecognition },
       { provider: 'adjacent-dialogue-grounding-nomination-v1', evidence: dialogueRecognition },
+      { provider: 'adjacent-water-freezing-nomination-v1', evidence: freezingRecognition },
     ].filter(item => item.evidence.reason === 'role-aligned');
     logEttinPilot('ettin-adjacent-ownership-recognition', targetSlot, ownershipRecognition);
     logEttinPilot('ettin-adjacent-dialogue-grounding-recognition', targetSlot, dialogueRecognition);
+    logEttinPilot('ettin-adjacent-water-freezing-recognition', targetSlot, freezingRecognition);
     let qaAdmission;
     if (new Set(providerEvidence.map(item => normalizeAiCandidate(item.evidence.nominee))).size > 1) {
       qaAdmission = { candidates: ordinaryCandidates, diagnostic: { mechanismVersion: 'cross-sentence-nomination-v1',
@@ -2100,6 +2167,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         nominees: [...new Set(providerEvidence.map(item => normalizeAiCandidate(item.evidence.nominee)))],
         providerNominees: providerEvidence.map(item => ({ provider: item.provider, nominee: item.evidence.nominee,
           ...(item.provider === 'adjacent-dialogue-grounding-nomination-v1' ? { dialogueGrounding: item.evidence } : {}),
+          ...(item.provider === 'adjacent-water-freezing-nomination-v1' ? { waterFreezing: item.evidence } : {}),
           sourceOwner: item.evidence.sourceOwner || null, repeatedAnimal: item.evidence.repeatedAnimal || null,
           antecedent: item.evidence.antecedent || null, reference: item.evidence.reference || null,
           predicateLemma: item.evidence.predicateLemma || null,
@@ -2112,9 +2180,11 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       qaAdmission = { ...generic, diagnostic: { ...generic.diagnostic,
         contributingProviders: providerEvidence.map(item => item.provider),
         ...(providerEvidence.some(item => item.provider === 'adjacent-it-subject-nomination-v1' ||
-          item.provider === 'adjacent-ownership-nomination-v1' || item.provider === 'adjacent-dialogue-grounding-nomination-v1')
+          item.provider === 'adjacent-ownership-nomination-v1' || item.provider === 'adjacent-dialogue-grounding-nomination-v1' ||
+          item.provider === 'adjacent-water-freezing-nomination-v1')
           ? { providerNominees: providerEvidence.map(item => ({ provider: item.provider,
             ...(item.provider === 'adjacent-dialogue-grounding-nomination-v1' ? { dialogueGrounding: item.evidence } : {}),
+            ...(item.provider === 'adjacent-water-freezing-nomination-v1' ? { waterFreezing: item.evidence } : {}),
             nominee: item.evidence.nominee, sourceOwner: item.evidence.sourceOwner || null,
             repeatedAnimal: item.evidence.repeatedAnimal || null,
             antecedent: item.evidence.antecedent || null, reference: item.evidence.reference || null,
@@ -2229,7 +2299,11 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         entityTypeContext: entityContext,
         entitySlotCompatibilityContext,
         discoursePersonCompatibilityContext,
-        ...(qaAdmission.diagnostic.contributingProviders?.includes('adjacent-dialogue-grounding-nomination-v1')
+        ...(qaAdmission.diagnostic.contributingProviders?.includes('adjacent-water-freezing-nomination-v1')
+          ? (qaAdmission.diagnostic.contributingProviders.length > 1
+            ? { crossSentenceNomination: qaAdmission.diagnostic }
+            : { adjacentWaterFreezingNomination: qaAdmission.diagnostic })
+          : qaAdmission.diagnostic.contributingProviders?.includes('adjacent-dialogue-grounding-nomination-v1')
           ? (qaAdmission.diagnostic.contributingProviders.length > 1
             ? { crossSentenceNomination: qaAdmission.diagnostic }
             : { adjacentDialogueGroundingNomination: qaAdmission.diagnostic })
