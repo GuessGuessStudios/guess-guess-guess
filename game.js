@@ -1482,10 +1482,472 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     return `\nPublic clues: The puzzle word lengths are ${lengths.join(', ')} letters.${revealed.length ? ` ${revealed.join(' ')}` : ''}`;
   }
 
+  // This temporary role view is public evidence only. It never supplies lexical
+  // authorization, resolves references, or adds ranking support to a candidate.
+  function recognizeAdjacentQaNomination(state) {
+    const engine = globalThis.GGGHumanPlaytest, target = state?.targetSlotIndex;
+    const diagnostic = { mechanismVersion: 'adjacent-qa-nomination-v1', targetSlot: target };
+    const stop = reason => ({ ...diagnostic, reason });
+    if (!state?.slots?.[target] || state.slots[target].solved) return stop('no-supported-adjacent-qa');
+    const bounds = index => entityTypeSentenceBounds(state, engine, index);
+    const own = bounds(target);
+    let question, answer;
+    if (state.slots[own.end].trailing === '?' && own.end + 1 < state.slots.length) {
+      question = own; answer = bounds(own.end + 1);
+    } else if (state.slots[own.end].trailing === '.' && own.start > 0) {
+      question = bounds(own.start - 1); answer = own;
+    }
+    if (!question || !answer || state.slots[question.end].trailing !== '?' ||
+        state.slots[answer.end].trailing !== '.') return stop('no-supported-adjacent-qa');
+    diagnostic.questionSpan = question; diagnostic.answerSpan = answer;
+    const mentions = new Map();
+    for (let index = question.start; index <= answer.end; index++) {
+      const slot = state.slots[index];
+      if (index !== target && (!slot.solved || slot.letters.some(letter => !letter.visible))) {
+        return stop('incomplete-public-evidence');
+      }
+      if (index !== question.end && index !== answer.end && slot.trailing) return stop('unsupported-clause-structure');
+      if (slot.gaps?.slice(0, -1).some(Boolean)) return stop('unsupported-clause-structure');
+      const surface = index === target ? null : engine.tokenAt(slot);
+      const normalized = surface ? normalizeAiCandidate(surface) : null;
+      const analysis = surface ? getHumanPlaytestAnalysis(surface) : null;
+      mentions.set(index, { surface, normalized, slotIndex: index,
+        sentenceIndex: index <= question.end ? 0 : 1,
+        casePattern: slot.letters.map(letter => letter.capital ? 'U' : 'l').join(''), analysis });
+    }
+    const word = index => mentions.get(index)?.normalized;
+    const roles = index => mentions.get(index)?.analysis?.roles || [];
+    const q = question.start, a = answer.start;
+    const wh = word(q), doQuestion = question.end - q === 3 && ['do', 'does'].includes(word(q + 1));
+    if (!['who', 'what'].includes(wh)) return stop('unsupported-clause-structure');
+    if (!doQuestion && question.end - q !== 2) return stop('unsupported-clause-structure');
+    const whRequestedRole = doQuestion ? 'direct-object' : 'subject';
+    diagnostic.whRequestedRole = whRequestedRole;
+    for (const [index, mention] of mentions) {
+      if (index === q || (doQuestion && index === q + 1) || index === target) continue;
+      if (['not', 'never', 'no'].includes(mention.normalized) ||
+          roles(index).some(role => ['auxiliary', 'modal', 'contraction'].includes(role))) {
+        return stop('unsupported-predicate-construction');
+      }
+    }
+    const coordinated = answer.end - a === 4 && word(a + 1) === 'and';
+    if (coordinated && [a, a + 2].includes(target)) return stop('target-role-ambiguous');
+    if (answer.end - a === 4 && word(a + 3) === 'and') return stop('multiple-role-fillers');
+    if ((!coordinated && answer.end - a !== 2) || (coordinated && whRequestedRole !== 'subject')) {
+      return stop('unsupported-clause-structure');
+    }
+    const qRoles = doQuestion ? { subject: [q + 2], 'direct-object': [q] }
+      : { subject: [q], 'direct-object': [q + 2] };
+    const aRoles = { subject: coordinated ? [a, a + 2] : [a], 'direct-object': [answer.end] };
+    const knownArgumentComparison = [];
+    diagnostic.knownArgumentComparison = knownArgumentComparison;
+    for (const role of ['subject', 'direct-object']) {
+      const left = qRoles[role], right = aRoles[role];
+      if (!left.includes(q) && !left.includes(target) && !right.includes(target)) {
+        const compatible = left.length === right.length && left.every((index, i) => word(index) === word(right[i]));
+        knownArgumentComparison.push({ role, question: left.map(word), answer: right.map(word), compatible });
+        if (!compatible) return stop('known-argument-conflict');
+      }
+    }
+    const targetInQuestion = target <= question.end, targetRoles = targetInQuestion ? qRoles : aRoles;
+    const alignedRoles = Object.keys(targetRoles).filter(role => targetRoles[role].includes(target));
+    if (alignedRoles.length !== 1) return stop('target-role-ambiguous');
+    const targetRole = alignedRoles[0], sourceSlots = (targetInQuestion ? aRoles : qRoles)[targetRole];
+    diagnostic.targetRole = targetRole; diagnostic.sourceRole = targetRole;
+    if (sourceSlots.includes(q)) return stop('no-public-role-filler');
+    if (sourceSlots.length !== 1) return stop('multiple-role-fillers');
+    // Nominal evidence must be independently recognized. Capitalization by
+    // itself is not a type, and pronouns never stand in for public arguments.
+    const nominal = index => {
+      if (index === q || index === target) return null;
+      const mention = mentions.get(index), lexicalRoles = roles(index);
+      if (lexicalRoles.some(role => ['pronoun', 'subjectPronoun', 'objectPronoun', 'possessivePronoun',
+        'possessiveDeterminer', 'demonstrative'].includes(role))) return 'reference-resolution-required';
+      if (lexicalRoles.some(role => ['determiner', 'article', 'preposition', 'conjunction', 'questionWord'].includes(role))) {
+        return 'type-compatibility-unresolved';
+      }
+      const authorization = globalThis.GGGProperNounBank?.resolveProperNounAuthorization(mention.surface);
+      const proper = mention.casePattern[0] === 'U' && authorization?.authorized === true;
+      if (!proper && !lexicalRoles.includes('noun')) return 'type-compatibility-unresolved';
+      if (wh === 'who' && aRoles[whRequestedRole].includes(index)) {
+        const animate = engine.semanticClasses(mention.surface, mention.analysis, false)
+          .some(type => ['PERSON', 'ANIMAL', 'ANIMATE'].includes(type));
+        const person = engine.nameFamiliarity(mention.surface) > 0 ||
+          authorization?.categories?.some(category => ['first-names', 'surnames'].includes(category));
+        if (!animate && !person) return 'type-compatibility-unresolved';
+      }
+      return null;
+    };
+    for (const index of [...Object.values(qRoles).flat(), ...Object.values(aRoles).flat()]) {
+      const problem = nominal(index);
+      if (problem) return stop(problem);
+    }
+    const qVerb = doQuestion ? question.end : q + 1, aVerb = coordinated ? a + 3 : a + 1;
+    const predicate = (index, baseOnly) => {
+      const analysis = mentions.get(index)?.analysis, lexicalRoles = roles(index);
+      if (!analysis?.primaryVerb || !analysis.transitive || !lexicalRoles.includes('verb') ||
+          lexicalRoles.some(role => ['pastTense', 'pastParticiple', 'presentParticiple', 'auxiliary'].includes(role))) return null;
+      const form = lexicalRoles.includes('thirdSingular') ? 'thirdSingular' :
+        lexicalRoles.includes('baseVerb') ? 'baseVerb' : null;
+      if (!form || (baseOnly && form !== 'baseVerb')) return null;
+      // Filter the analyzer's lemmas to attested base verbs; never stem strings.
+      const lemmas = [...new Set([...(analysis.lemmas || []), ...(form === 'baseVerb' ? [word(index)] : [])])]
+        .filter(lemma => {
+          const base = getHumanPlaytestAnalysis(lemma);
+          return base.primaryVerb && base.roles.includes('baseVerb') &&
+            !base.roles.some(role => ['pastTense', 'pastParticiple', 'presentParticiple', 'auxiliary'].includes(role));
+        });
+      return { slotIndex: index, surface: mentions.get(index).surface, form, lemmas };
+    };
+    const questionPredicate = predicate(qVerb, doQuestion), answerPredicate = predicate(aVerb, coordinated);
+    if (!questionPredicate || !answerPredicate) return stop('unsupported-predicate-construction');
+    const subjectIndices = aRoles.subject.includes(target) ? qRoles.subject : aRoles.subject;
+    const pluralSubject = coordinated || (subjectIndices.length === 1 &&
+      mentions.get(subjectIndices[0])?.analysis?.pluralNoun === true &&
+      !globalThis.GGGProperNounBank?.resolveProperNounAuthorization(word(subjectIndices[0]))?.authorized);
+    if (answerPredicate.form !== (pluralSubject ? 'baseVerb' : 'thirdSingular') ||
+        (doQuestion && word(q + 1) !== (pluralSubject ? 'do' : 'does')) ||
+        (!doQuestion && questionPredicate.form !== 'thirdSingular')) return stop('unsupported-predicate-construction');
+    const shared = questionPredicate.lemmas.filter(lemma => answerPredicate.lemmas.includes(lemma));
+    if (shared.length !== 1) return stop('predicate-alignment-unclear');
+    const sourceSlot = sourceSlots[0], sourceMention = { ...mentions.get(sourceSlot), role: targetRole };
+    delete sourceMention.analysis;
+    return { ...diagnostic, reason: 'role-aligned', predicateLemma: shared[0],
+      questionPredicate, answerPredicate, sourceSlot, sourceMention, nominee: sourceMention.surface };
+  }
+
+  // Mechanism #2: exact three-token active present clauses only. This reads
+  // the same public snapshot path as the Q/A recognizer and never consults an
+  // answer key or hidden slot data.
+  function recognizeAdjacentDeclarativeNomination(state) {
+    const engine = globalThis.GGGHumanPlaytest, target = state?.targetSlotIndex;
+    const base = { mechanismVersion: 'adjacent-declarative-nomination-v1', targetSlot: target };
+    const stop = reason => ({ ...base, reason });
+    if (!state?.slots?.[target] || state.slots[target].solved) return stop('no-supported-adjacent-declaratives');
+    const own = entityTypeSentenceBounds(state, engine, target);
+    const spans = [];
+    if (own.end - own.start === 2 && own.start >= 3) spans.push([entityTypeSentenceBounds(state, engine, own.start - 1), own]);
+    if (own.end - own.start === 2 && own.end + 3 < state.slots.length) spans.push([own, entityTypeSentenceBounds(state, engine, own.end + 1)]);
+    for (const [left, right] of spans) {
+      if (left.end - left.start !== 2 || right.end - right.start !== 2 || left.end + 1 !== right.start) continue;
+      if (state.slots[left.end].trailing !== '.' || state.slots[right.end].trailing !== '.') continue;
+      const pair = [left, right], indices = pair.flatMap(span => [span.start, span.start + 1, span.end]);
+      if (indices.filter(index => index === target).length !== 1) continue;
+      const invalidToken = indices.some(index => {
+        const slot = state.slots[index];
+        return index !== target && (!slot.solved || slot.letters.some(letter => !letter.visible)) ||
+          slot.gaps?.slice(0, -1).some(Boolean) || (index !== left.end && index !== right.end && slot.trailing);
+      });
+      if (invalidToken) continue;
+      const info = index => {
+        const slot = state.slots[index], surface = index === target ? null : engine.tokenAt(slot);
+        return { surface, normalized: surface ? normalizeAiCandidate(surface) : null,
+          analysis: surface ? getHumanPlaytestAnalysis(surface) : null,
+          casePattern: slot.letters.map(letter => letter.capital ? 'U' : 'l').join('') };
+      };
+      const li = [left.start, left.start + 1, left.end].map(info), ri = [right.start, right.start + 1, right.end].map(info);
+      const targetPosition = target === left.start || target === right.start ? 0 : target === left.start + 1 || target === right.start + 1 ? 1 : 2;
+      if (targetPosition !== 2) continue;
+      if (li[0].normalized !== ri[0].normalized || !li[0].normalized) continue;
+      const subjectAnalysis = li[0].analysis;
+      if (!subjectAnalysis || subjectAnalysis.roles.some(role => ['pronoun','subjectPronoun','objectPronoun','determiner','conjunction'].includes(role))) continue;
+      const properAuth = globalThis.GGGProperNounBank?.resolveProperNounAuthorization(li[0].surface);
+      if (!subjectAnalysis.roles.includes('noun') && !(li[0].casePattern[0] === 'U' && properAuth?.authorized)) continue;
+      const plural = subjectAnalysis.pluralNoun === true && !properAuth?.authorized;
+      const verb = item => {
+        const analysis = item.analysis, roles = analysis?.roles || [];
+        if (!analysis?.primaryVerb || !analysis.transitive || !roles.includes('verb') ||
+            roles.some(role => ['auxiliary','modal','pastTense','pastParticiple','presentParticiple'].includes(role))) return null;
+        const form = roles.includes('thirdSingular') ? 'thirdSingular' : roles.includes('baseVerb') ? 'baseVerb' : null;
+        if (!form || form !== (plural ? 'baseVerb' : 'thirdSingular')) return null;
+        const lemmas = [...new Set([...(analysis.lemmas || []), ...(form === 'baseVerb' ? [item.normalized] : [])])]
+          .filter(lemma => { const a = getHumanPlaytestAnalysis(lemma); return a.primaryVerb && a.roles.includes('baseVerb') &&
+            !a.roles.some(role => ['pastTense','pastParticiple','presentParticiple','auxiliary'].includes(role)); });
+        return { form, lemmas };
+      };
+      const lv = verb(li[1]), rv = verb(ri[1]);
+      if (!lv || !rv) continue;
+      const shared = lv.lemmas.filter(lemma => rv.lemmas.includes(lemma));
+      if (shared.length !== 1) continue;
+      const source = target === left.end ? ri[2] : li[2];
+      const sourceIndex = target === left.end ? right.end : left.end;
+      const nominalRoles = source.analysis?.roles || [];
+      const auth = globalThis.GGGProperNounBank?.resolveProperNounAuthorization(source.surface);
+      if (nominalRoles.some(role => ['pronoun','subjectPronoun','objectPronoun','possessivePronoun','determiner','article','preposition','conjunction'].includes(role)) ||
+          (!nominalRoles.includes('noun') && !(source.casePattern[0] === 'U' && auth?.authorized))) continue;
+      return { ...base, reason: 'role-aligned', selectedSpans: pair, targetSlot: target,
+        sourceSlot: sourceIndex, targetRole: 'direct-object', sourceRole: 'direct-object',
+        predicateLemma: shared[0], predicateForms: [lv.form, rv.form],
+        subjectComparison: [li[0].normalized, ri[0].normalized], nominee: source.surface };
+    }
+    return stop('no-supported-adjacent-declaratives');
+  }
+
+  // Mechanism #3: a visible sentence-initial It binds only to the explicit
+  // singular animal subject of the puzzle's opening sentence. The shared
+  // present predicate lets its attested plural animal object be suggested for
+  // the following unresolved direct object; it does not establish identity.
+  function recognizeAdjacentItSubjectNomination(publicState) {
+    const engine = globalThis.GGGHumanPlaytest, targetIndex = publicState?.targetSlotIndex;
+    const base = { mechanismVersion: 'adjacent-it-subject-nomination-v1', targetSlot: targetIndex };
+    const stop = reason => ({ ...base, reason });
+    if (!publicState?.slots?.[targetIndex] || publicState.slots[targetIndex].solved ||
+        targetIndex !== 6 || publicState.slots.length < 7) {
+      return stop('no-supported-adjacent-it-reference');
+    }
+    const state = globalThis.GGGPublicBoard.snapshot(publicState).state;
+    const target = state.targetSlotIndex;
+    const sourceSpan = entityTypeSentenceBounds(state, engine, 0);
+    const targetSpan = entityTypeSentenceBounds(state, engine, 4);
+    if (sourceSpan.start !== 0 || sourceSpan.end !== 3 || targetSpan.start !== 4 || targetSpan.end !== 6 ||
+        sourceSpan.end + 1 !== targetSpan.start || state.slots[3].trailing !== '.' || state.slots[6].trailing !== '.') {
+      return stop('unsupported-sentence-boundary');
+    }
+    const pairIndices = [0, 1, 2, 3, 4, 5, 6];
+    for (const index of pairIndices) {
+      const slot = state.slots[index];
+      if (slot.gaps?.slice(0, -1).some(Boolean)) return stop('internal-punctuation');
+      if (![3, 6].includes(index) && slot.trailing) return stop('extra-punctuation');
+      if (index !== target && (!slot.solved || !slot.letters?.length ||
+          slot.letters.some(letter => !/^[A-Za-z]$/.test(String(letter.visible ?? ''))))) {
+        return stop('incomplete-public-evidence');
+      }
+    }
+    if (state.slots[6].solved || !state.slots[6].letters.some(letter => letter.visible === null)) {
+      return stop('target-not-unresolved-object');
+    }
+    const word = index => engine.tokenAt(state.slots[index]);
+    const normalized = index => normalizeAiCandidate(word(index));
+    const analysis = index => getHumanPlaytestAnalysis(word(index));
+    const roles = index => analysis(index)?.roles || [];
+    const casePattern = index => state.slots[index].letters.map(letter => letter.capital ? 'U' : 'l').join('');
+    const expectedCase = (index, initialCapital = false) => {
+      const pattern = casePattern(index);
+      return initialCapital ? /^U[l]*$/.test(pattern) : /^l+$/.test(pattern);
+    };
+    const determiner = normalized(0);
+    if (!['a', 'an'].includes(determiner) || !expectedCase(0, true) ||
+        !roles(0).includes('article')) return stop('unsupported-source-determiner');
+    const subjectWord = normalized(1), subjectAnalysis = analysis(1);
+    const subjectSemantics = engine.semanticClasses(word(1), subjectAnalysis, false);
+    if (!expectedCase(1) || !subjectAnalysis?.primaryNoun || !roles(1).includes('noun') ||
+        roles(1).some(role => ['properNoun', 'pronoun', 'subjectPronoun', 'objectPronoun',
+          'possessivePronoun', 'determiner', 'article', 'conjunction'].includes(role)) ||
+        !subjectSemantics.includes('ANIMAL') || subjectSemantics.includes('PERSON') ||
+        subjectAnalysis.pluralNoun === true || engine.subjectNumber(subjectAnalysis, subjectWord) !== 'singular') {
+      return stop('unsupported-animal-antecedent');
+    }
+    const referenceWord = normalized(4), referenceRoles = roles(4);
+    if (word(4) !== 'It' || referenceWord !== 'it' || !expectedCase(4, true) ||
+        !referenceRoles.includes('subjectPronoun') || !referenceRoles.includes('pronoun')) {
+      return stop('unsupported-reference-form');
+    }
+    const predicate = index => {
+      const item = analysis(index), itemRoles = item?.roles || [];
+      if (!expectedCase(index) || !item?.primaryVerb || !item.transitive ||
+          !itemRoles.includes('verb') || !itemRoles.includes('thirdSingular') ||
+          itemRoles.some(role => ['baseVerb', 'pastTense', 'pastParticiple', 'presentParticiple',
+            'auxiliary', 'modal', 'negator', 'contraction'].includes(role))) return null;
+      const lemmas = [...new Set((item.lemmas || []).map(lemma => normalizeAiCandidate(lemma)))].filter(lemma => {
+        const baseAnalysis = getHumanPlaytestAnalysis(lemma), baseRoles = baseAnalysis?.roles || [];
+        return baseAnalysis?.primaryVerb === true && baseAnalysis.transitive === true &&
+          baseRoles.includes('verb') && baseRoles.includes('baseVerb') &&
+          !baseRoles.some(role => ['thirdSingular', 'pastTense', 'pastParticiple', 'presentParticiple',
+            'auxiliary', 'modal', 'negator', 'contraction'].includes(role));
+      });
+      return lemmas.length === 1 ? lemmas[0] : null;
+    };
+    const sourcePredicate = predicate(2), targetPredicate = predicate(5);
+    if (!sourcePredicate || !targetPredicate || sourcePredicate !== targetPredicate) {
+      return stop('predicate-alignment-unclear');
+    }
+    const objectWord = normalized(3), objectAnalysis = analysis(3);
+    const objectSemantics = engine.semanticClasses(word(3), objectAnalysis, false);
+    const pluralLemmas = [...new Set((objectAnalysis?.lemmas || []).map(lemma => normalizeAiCandidate(lemma)))].filter(lemma => {
+      if (!lemma || lemma === objectWord) return false;
+      const singularAnalysis = getHumanPlaytestAnalysis(lemma);
+      const singularSemantics = engine.semanticClasses(lemma, singularAnalysis, false);
+      return singularAnalysis?.primaryNoun === true && (singularAnalysis.roles || []).includes('noun') &&
+        singularAnalysis.pluralNoun !== true && engine.subjectNumber(singularAnalysis, lemma) === 'singular' &&
+        singularSemantics.includes('ANIMAL') && !singularSemantics.includes('PERSON');
+    });
+    if (!expectedCase(3) || !objectAnalysis?.primaryNoun || !roles(3).includes('noun') ||
+        roles(3).some(role => ['properNoun', 'pronoun', 'subjectPronoun', 'objectPronoun',
+          'possessivePronoun', 'determiner', 'article', 'preposition', 'conjunction'].includes(role)) ||
+        !objectSemantics.includes('ANIMAL') || objectSemantics.includes('PERSON') ||
+        objectAnalysis.pluralNoun !== true || engine.subjectNumber(objectAnalysis, objectWord) !== 'plural' ||
+        pluralLemmas.length !== 1) return stop('source-object-number-unclear');
+    // The target's public letters and internal token pattern must permit the
+    // exact source spelling. Admission repeats this check at its boundary.
+    if (!engine.matchesToken(word(3), state.slots[6]) ||
+        !engine.matchesCasePattern(word(3), state.slots[6])) return stop('target-pattern-mismatch');
+    return { ...base, reason: 'role-aligned', sourceSpan, targetSpan,
+      antecedentSlot: 1, antecedent: word(1), referenceSlot: 4, reference: word(4),
+      binding: { sourceRole: 'subject', targetRole: 'subject' },
+      sourceObjectSlot: 3, targetObjectSlot: 6, sourceRole: 'direct-object', targetRole: 'direct-object',
+      predicateLemma: sourcePredicate, sourcePredicateForm: 'thirdSingular', targetPredicateForm: 'thirdSingular',
+      subjectNumber: 'singular', sourceObjectNumber: 'plural', sourceObjectLemma: pluralLemmas[0],
+      nominee: word(3) };
+  }
+
+  // Mechanism #4: one exact, public ownership reversal. The predicates are
+  // fixed construction terminals; do not require the lexical analyzer to
+  // classify `owns` or `belongs` as primary verbs.
+  function recognizeAdjacentOwnershipNomination(publicState) {
+    const engine = globalThis.GGGHumanPlaytest, targetIndex = publicState?.targetSlotIndex;
+    const base = { mechanismVersion: 'adjacent-ownership-nomination-v1', targetSlot: targetIndex };
+    const stop = reason => ({ ...base, reason });
+    if (!publicState?.slots?.[targetIndex] || publicState.slots[targetIndex].solved) {
+      return stop('no-unresolved-target');
+    }
+    if (!globalThis.GGGPublicBoard?.snapshot) return stop('public-board-unavailable');
+    const state = globalThis.GGGPublicBoard.snapshot(publicState).state;
+    const targetSpan = entityTypeSentenceBounds(state, engine, targetIndex);
+    if (targetSpan.end - targetSpan.start !== 5 || targetIndex !== targetSpan.end ||
+        state.slots[targetSpan.end].trailing !== '.') return stop('unsupported-target-shape');
+    const sourceSpan = entityTypeSentenceBounds(state, engine, targetSpan.start - 1);
+    if (sourceSpan.end - sourceSpan.start !== 4 || sourceSpan.end + 1 !== targetSpan.start ||
+        state.slots[sourceSpan.end].trailing !== '.') return stop('unsupported-adjacent-source-shape');
+
+    const indices = [...Array(5)].map((_, offset) => sourceSpan.start + offset)
+      .concat([...Array(6)].map((_, offset) => targetSpan.start + offset));
+    for (const index of indices) {
+      const slot = state.slots[index];
+      if (slot.gaps?.slice(0, -1).some(Boolean)) return stop('internal-punctuation');
+      if (index !== sourceSpan.end && index !== targetSpan.end && slot.trailing) return stop('extra-punctuation');
+      if (index !== targetIndex && (!slot.solved || !slot.letters?.length ||
+          slot.letters.some(letter => !/^[A-Za-z]$/.test(String(letter.visible ?? ''))))) {
+        return stop('incomplete-public-evidence');
+      }
+    }
+    const targetSlot = state.slots[targetIndex];
+    if (targetSlot.solved || !targetSlot.letters.some(letter => letter.visible === null)) {
+      return stop('target-not-unresolved');
+    }
+    const word = index => engine.tokenAt(state.slots[index]);
+    const casePattern = index => state.slots[index].letters.map(letter => letter.capital ? 'U' : 'l').join('');
+    const exactWords = [
+      [sourceSpan.start, 'The', /^U[l]*$/], [sourceSpan.start + 2, 'owns', /^l+$/],
+      [sourceSpan.start + 3, 'the', /^l+$/], [targetSpan.start, 'The', /^U[l]*$/],
+      [targetSpan.start + 2, 'belongs', /^l+$/], [targetSpan.start + 3, 'to', /^l+$/],
+      [targetSpan.start + 4, 'the', /^l+$/],
+    ];
+    for (const [index, expected, casing] of exactWords) {
+      if (word(index) !== expected || !casing.test(casePattern(index))) return stop('unsupported-fixed-token');
+    }
+    const ownerIndex = sourceSpan.start + 1, sourceAnimalIndex = sourceSpan.start + 4;
+    const targetAnimalIndex = targetSpan.start + 1;
+    const nounEvidence = (index, kind) => {
+      const surface = word(index), analysis = getHumanPlaytestAnalysis(surface);
+      const roles = analysis?.roles || [], semantics = engine.semanticClasses(surface, analysis, false);
+      const forbidden = ['properNoun', 'pronoun', 'subjectPronoun', 'objectPronoun', 'possessivePronoun',
+        'possessiveDeterminer', 'determiner', 'article', 'conjunction', 'preposition', 'demonstrative'];
+      if (!/^[a-z]+$/.test(surface) || !/^l+$/.test(casePattern(index)) ||
+          !analysis?.primaryNoun || !roles.includes('noun') || roles.some(role => forbidden.includes(role)) ||
+          analysis.pluralNoun === true || engine.subjectNumber(analysis, surface) !== 'singular') return false;
+      if (kind === 'PERSON') return semantics.includes('PERSON') && !semantics.includes('ANIMAL');
+      return semantics.includes('ANIMAL') && !semantics.includes('PERSON');
+    };
+    if (!nounEvidence(ownerIndex, 'PERSON')) return stop('unsupported-owner');
+    if (!nounEvidence(sourceAnimalIndex, 'ANIMAL')) return stop('unsupported-source-animal');
+    if (word(sourceAnimalIndex) !== word(targetAnimalIndex)) return stop('owned-animal-mismatch');
+    if (!nounEvidence(targetAnimalIndex, 'ANIMAL')) return stop('unsupported-target-animal');
+    const nominee = word(ownerIndex);
+    if (!engine.matchesToken(nominee, targetSlot) || !engine.matchesCasePattern(nominee, targetSlot)) {
+      return stop('target-pattern-mismatch');
+    }
+    return { ...base, reason: 'role-aligned', nominee, sourceOwner: nominee,
+      repeatedAnimal: word(sourceAnimalIndex), sourceSpan, targetSpan,
+      sourceOwnerSlot: ownerIndex, sourceAnimalSlot: sourceAnimalIndex, targetAnimalSlot: targetAnimalIndex,
+      sourceRole: 'subject', targetRole: 'owner-complement' };
+  }
+
+  function crossSentenceNominationDiagnosticType(diagnostic) {
+    const providers = diagnostic?.contributingProviders || [diagnostic?.mechanismVersion];
+    if (providers.includes('adjacent-ownership-nomination-v1')) {
+      return providers.length > 1 ? 'ettin-cross-sentence-nomination' : 'ettin-adjacent-ownership-nomination';
+    }
+    if (providers.includes('adjacent-it-subject-nomination-v1')) {
+      return providers.length > 1 ? 'ettin-cross-sentence-nomination' : 'ettin-adjacent-it-subject-nomination';
+    }
+    if (diagnostic?.mechanismVersion === 'adjacent-declarative-nomination-v1') return 'ettin-adjacent-declarative-nomination';
+    return 'ettin-adjacent-qa-nomination';
+  }
+
+  function admitCrossSentenceNomination({ state, snapshot, targetSlot, lexicalPool, ordinary, ordinaryCap,
+      boardKey, opportunity = null, evidenceBudget = 1, evidenceUsed = 0, evidence,
+      mechanismVersion = 'adjacent-qa-nomination-v1' }) {
+    const engine = globalThis.GGGHumanPlaytest;
+    const diagnostic = { mechanismVersion, boardKey,
+      opportunity: opportunity ? { ticket: opportunity.ticket, gameId: opportunity.gameId } : null,
+      targetSlot: targetSlot.slotIndex, ordinaryCandidateCount: ordinary.length, ordinaryCap,
+      evidenceAdditionCount: 0, finalCandidateCount: ordinary.length,
+      admissionAttempted: false, admissionAllowed: false };
+    const stop = reason => ({ candidates: ordinary, diagnostic: { ...diagnostic, reason } });
+    if (boardKey !== engine.boardKey(state) || (opportunity && opportunity.boardKey !== boardKey)) return stop('stale-board');
+    if (opportunity && !currentEttinOpportunity(opportunity)) return stop('stale-opportunity');
+    evidence ||= recognizeAdjacentQaNomination(state);
+    Object.assign(diagnostic, evidence);
+    if (evidence.reason !== 'role-aligned') return stop(evidence.reason);
+    const normalized = normalizeAiCandidate(evidence.nominee);
+    const matches = candidate => normalizeAiCandidate(candidate.word) === normalized;
+    const hard = lexicalPool.hardCandidates.find(matches);
+    const authorized = hard || lexicalPool.universe?.find(matches);
+    diagnostic.authorizationResult = authorized ? 'authorized-record' : 'no-authorized-candidate-record';
+    if (!authorized) return stop('no-authorized-candidate-record');
+    const enriched = lexicalPool.contextualAccess?.classData?.enriched?.find(matches);
+    // Absence from enriched preparation may be a deliberate exclusion. Never
+    // reconstruct a record from the public spelling or bypass that exclusion.
+    const surface = (enriched || authorized).submissionSurface;
+    const valid = globalThis.GGGEttinProvider.validateCandidate(snapshot, surface);
+    diagnostic.hardValidationResult = valid;
+    if (!valid?.ok) return stop(valid?.reason || 'public-invalid');
+    if (!hard || !enriched || enriched.roleEligible !== true || !Array.isArray(enriched.lexicalClasses)) {
+      return stop('existing-preparation-excluded');
+    }
+    const candidate = { ...enriched,
+      shortlistClasses: enriched.shortlistClasses || [...enriched.lexicalClasses] };
+    diagnostic.bankRevision = candidate.properNounBankRevision;
+    if (!isSafelySubmittableAiCandidate(surface, targetSlot.length)) return stop('unsafe-submission');
+    if (!matchesAiRevealedLetters(surface, targetSlot)) return stop('revealed-letter-mismatch');
+    if (hasWrongAiGuessForSlot(targetSlot.slotIndex, surface)) return stop('public-rejection');
+    const problem = stage1CandidateBlockPolicyProblem({ ...candidate, publicBoardKey: boardKey },
+      { ...lexicalPool, candidates: [candidate] }, state, surface);
+    if (problem) { diagnostic.hardValidationResult = { ok: false, reason: problem }; return stop(problem); }
+    diagnostic.alreadyPresent = ordinary.some(matches);
+    if (diagnostic.alreadyPresent) return stop('already-present');
+    diagnostic.admissionAttempted = true;
+    // One shared experimental evidence allowance, independent of the ordinary
+    // baseline/extension cap. No later evidence source gets another free slot.
+    if (!Number.isFinite(evidenceBudget) || !Number.isInteger(evidenceUsed) || evidenceUsed < 0 ||
+        evidenceUsed >= Math.min(1, evidenceBudget) || ordinary.length > ordinaryCap) return stop('evidence-capacity-blocked');
+    const candidates = [...ordinary, candidate];
+    return { candidates, diagnostic: { ...diagnostic, reason: 'admitted', admissionAllowed: true,
+      evidenceAdditionCount: 1, finalCandidateCount: candidates.length } };
+  }
+
+  function admitAdjacentQaNomination(input) {
+    return admitCrossSentenceNomination({ ...input, evidence: recognizeAdjacentQaNomination(input.state),
+      mechanismVersion: 'adjacent-qa-nomination-v1' });
+  }
+
+  function admitAdjacentDeclarativeNomination(input) {
+    return admitCrossSentenceNomination({ ...input, evidence: recognizeAdjacentDeclarativeNomination(input.state),
+      mechanismVersion: 'adjacent-declarative-nomination-v1' });
+  }
+
   async function buildEttinPilotPool(targetSlot, attentionPlan = null, ownership = null) {
     if (!targetSlot || !globalThis.GGGEttinProvider) return { status: 'operational-failure', reason: 'provider-unavailable' };
+    const preparationBoardKey = globalThis.GGGHumanPlaytest.boardKey(getHumanPlaytestPublicState(targetSlot));
     const lexicalPool = await buildHumanPlaytestPool(targetSlot, [], null, true);
-    if (ownership && !currentEttinOpportunity(ownership)) return { status: 'stale' };
+    const freshBoardKey = globalThis.GGGHumanPlaytest.boardKey(getHumanPlaytestPublicState(targetSlot));
+    const staleReason = preparationBoardKey !== freshBoardKey || (ownership && ownership.boardKey !== freshBoardKey) ? 'stale-board' :
+      ownership && !currentEttinOpportunity(ownership) ? 'stale-opportunity' : null;
+    if (staleReason) {
+      logEttinPilot('ettin-adjacent-qa-nomination', targetSlot, { mechanismVersion: 'adjacent-qa-nomination-v1',
+        boardKey: preparationBoardKey, opportunity: ownership, reason: staleReason, evidenceAdditionCount: 0 });
+      return { status: 'stale' };
+    }
     if (!lexicalPool || !Array.isArray(lexicalPool.candidates) || !Array.isArray(lexicalPool.hardCandidates)) {
       return { status: 'operational-failure', reason: 'target-pool-unavailable' };
     }
@@ -1547,7 +2009,53 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const totalExtensionBudget = ENTITY_TYPE_ACCESS_ENABLED
       ? Math.max(extensionBudget, ETTIN_CONTEXTUAL_ACCESS_CAP) : extensionBudget;
     const cap = baselineCap + totalExtensionBudget;
-    const bounded = [...baseline, ...extension].map(candidate => ({ ...candidate, word: candidate.submissionSurface }));
+    const ordinaryCandidates = [...baseline, ...extension];
+    const admissionInput = { state, snapshot, targetSlot, lexicalPool, ordinary: ordinaryCandidates,
+      ordinaryCap: cap, boardKey: preparationBoardKey, opportunity: ownership };
+    const ownershipRecognition = recognizeAdjacentOwnershipNomination(state);
+    const providerEvidence = [
+      { provider: 'adjacent-qa-nomination-v1', evidence: recognizeAdjacentQaNomination(state) },
+      { provider: 'adjacent-declarative-nomination-v1', evidence: recognizeAdjacentDeclarativeNomination(state) },
+      { provider: 'adjacent-it-subject-nomination-v1', evidence: recognizeAdjacentItSubjectNomination(state) },
+      { provider: 'adjacent-ownership-nomination-v1', evidence: ownershipRecognition },
+    ].filter(item => item.evidence.reason === 'role-aligned');
+    logEttinPilot('ettin-adjacent-ownership-recognition', targetSlot, ownershipRecognition);
+    let qaAdmission;
+    if (new Set(providerEvidence.map(item => normalizeAiCandidate(item.evidence.nominee))).size > 1) {
+      qaAdmission = { candidates: ordinaryCandidates, diagnostic: { mechanismVersion: 'cross-sentence-nomination-v1',
+        reason: 'conflicting-provider-nominations', contributingProviders: providerEvidence.map(item => item.provider),
+        nominees: [...new Set(providerEvidence.map(item => normalizeAiCandidate(item.evidence.nominee)))],
+        providerNominees: providerEvidence.map(item => ({ provider: item.provider, nominee: item.evidence.nominee,
+          sourceOwner: item.evidence.sourceOwner || null, repeatedAnimal: item.evidence.repeatedAnimal || null,
+          antecedent: item.evidence.antecedent || null, reference: item.evidence.reference || null,
+          predicateLemma: item.evidence.predicateLemma || null,
+          sourceSpan: item.evidence.sourceSpan || null, targetSpan: item.evidence.targetSpan || null })),
+        ordinaryCandidateCount: ordinaryCandidates.length, evidenceAdditionCount: 0, finalCandidateCount: ordinaryCandidates.length } };
+    } else if (providerEvidence.length) {
+      const selected = providerEvidence[0];
+      const generic = admitCrossSentenceNomination({ ...admissionInput, evidence: selected.evidence,
+        mechanismVersion: selected.provider });
+      qaAdmission = { ...generic, diagnostic: { ...generic.diagnostic,
+        contributingProviders: providerEvidence.map(item => item.provider),
+        ...(providerEvidence.some(item => item.provider === 'adjacent-it-subject-nomination-v1' ||
+          item.provider === 'adjacent-ownership-nomination-v1')
+          ? { providerNominees: providerEvidence.map(item => ({ provider: item.provider,
+            nominee: item.evidence.nominee, sourceOwner: item.evidence.sourceOwner || null,
+            repeatedAnimal: item.evidence.repeatedAnimal || null,
+            antecedent: item.evidence.antecedent || null, reference: item.evidence.reference || null,
+            predicateLemma: item.evidence.predicateLemma || null,
+            sourceSpan: item.evidence.sourceSpan || null, targetSpan: item.evidence.targetSpan || null })) } : {}) } };
+    } else {
+      qaAdmission = admitAdjacentQaNomination(admissionInput);
+      const declarative = recognizeAdjacentDeclarativeNomination(state);
+      if (declarative.reason === 'role-aligned') {
+        qaAdmission = admitAdjacentDeclarativeNomination(admissionInput);
+        qaAdmission.diagnostic.contributingProviders = ['adjacent-declarative-nomination-v1'];
+      }
+    }
+    const diagnosticType = crossSentenceNominationDiagnosticType(qaAdmission.diagnostic);
+    logEttinPilot(diagnosticType, targetSlot, qaAdmission.diagnostic);
+    const bounded = qaAdmission.candidates.map(candidate => ({ ...candidate, word: candidate.submissionSurface }));
     logEttinPilot('ettin-input', targetSlot, { targetReason: attentionPlan?.selectedReason || 'attention-plan-selected',
       resourceKey: lexicalPool.resourceKey,
       universeCandidateCount: lexicalPool.universe.length, hardValidPopulationCount: lexicalPool.hardCandidates.length,
@@ -1566,7 +2074,8 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         capacityBlocked: entityExtension.capacityBlocked,
         added: entityExtension.candidates.map(candidate => ({ word: candidate.word,
           types: entityExtension.matchedTypes.get(normalizeAiCandidate(candidate.word)) || [] })) },
-      ettinCandidates: bounded.map(c => c.word), cap, truncatedCount: Math.max(0, hardValid.length - cap),
+      ettinCandidates: bounded.map(c => c.word), cap: cap + qaAdmission.diagnostic.evidenceAdditionCount,
+      ordinaryCandidateCap: cap, truncatedCount: Math.max(0, hardValid.length - cap),
       truncationStartIndex: hardValid.length > cap ? cap : null });
     if (!bounded.length) {
       logEttinPilot('ettin-structural-failure', targetSlot, { reason: 'no-hard-valid-candidates', lexicalCandidateCount: shortlistCandidates.length, hardValidPopulationCount: lexicalPool.hardCandidates.length, hardValidCandidateCount: hardValid.length, ettinCandidateCount: 0 });
@@ -1576,7 +2085,14 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const started = performance.now();
     try {
       const scored = await globalThis.GGGEttinProvider.scoreCandidates(snapshot, bounded);
-      if (ownership && !currentEttinOpportunity(ownership)) return { status: 'stale' };
+      const scoringStaleReason = preparationBoardKey !==
+        globalThis.GGGHumanPlaytest.boardKey(getHumanPlaytestPublicState(targetSlot)) ? 'stale-board' :
+        ownership && !currentEttinOpportunity(ownership) ? 'stale-opportunity' : null;
+      if (scoringStaleReason) {
+        logEttinPilot(crossSentenceNominationDiagnosticType(qaAdmission.diagnostic), targetSlot, { ...qaAdmission.diagnostic,
+          reason: scoringStaleReason, admissionAllowed: false, discarded: true });
+        return { status: 'stale' };
+      }
       if (!Array.isArray(scored?.candidates) || !scored.candidates.length || scored.candidates.some(candidate =>
         !Number.isInteger(candidate?.rank) || candidate.rank < 1 || !Number.isFinite(candidate.score) ||
         !Number.isFinite(candidate.probability) || candidate.probability < 0)) {
@@ -1591,7 +2107,8 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         personAccessQualified: personQualification.qualified,
         personAccessQualificationReason: personQualification.reason,
         grammaticalExpectation: contextualAccess.expectation,
-        ettinCandidateCount: bounded.length, cap, loadMs: scored.loadMs, scoringMs: scored.scoringMs,
+        ettinCandidateCount: bounded.length, cap: cap + qaAdmission.diagnostic.evidenceAdditionCount,
+        ordinaryCandidateCap: cap, loadMs: scored.loadMs, scoringMs: scored.scoringMs,
         partial_neighbor_evidence_present: scored.candidates.some(c => c.partial_neighbor_evidence_present),
         partial_neighbor_evidence_consumed_by_ettin: false,
         ettinRenderedInput: scored.candidates[0] ? { text: scored.candidates[0].ettinRenderedText, targetStart: scored.candidates[0].ettinTargetStart, targetEnd: scored.candidates[0].ettinTargetEnd, targetSlot: targetSlot.slotIndex, maskToken: '[MASK]', maskedNeighborTokenIndices: scored.candidates[0].ettinMaskedNeighborTokenIndices, partialNeighborEvidencePresent: scored.candidates[0].partial_neighbor_evidence_present } : null,
@@ -1637,9 +2154,19 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         entityTypeContext: entityContext,
         entitySlotCompatibilityContext,
         discoursePersonCompatibilityContext,
+        ...(qaAdmission.diagnostic.contributingProviders?.includes('adjacent-ownership-nomination-v1')
+          ? (qaAdmission.diagnostic.contributingProviders.length > 1
+            ? { crossSentenceNomination: qaAdmission.diagnostic }
+            : { adjacentOwnershipNomination: qaAdmission.diagnostic })
+          : qaAdmission.diagnostic.contributingProviders?.includes('adjacent-it-subject-nomination-v1')
+          ? (qaAdmission.diagnostic.contributingProviders.length > 1
+            ? { crossSentenceNomination: qaAdmission.diagnostic }
+            : { adjacentItSubjectNomination: qaAdmission.diagnostic })
+          : { adjacentQaNomination: qaAdmission.diagnostic }),
         publicBoardKey, lexicalCandidateCount: shortlistCandidates.length, universeCandidateCount: lexicalPool.universe.length,
         hardValidPopulationCount: lexicalPool.hardCandidates.length, hardValidCandidateCount: hardValid.length,
-        ettinCandidateCount: bounded.length, candidateCap: cap, modelLoadMs: scored.loadMs, scoringMs: Number((performance.now() - started).toFixed(3)), snapshot } };
+        ettinCandidateCount: bounded.length, ordinaryCandidateCap: cap,
+        candidateCap: cap + qaAdmission.diagnostic.evidenceAdditionCount, modelLoadMs: scored.loadMs, scoringMs: Number((performance.now() - started).toFixed(3)), snapshot } };
     } catch (error) {
       logEttinPilot('ettin-failed', targetSlot, { reason: error.code || String(error.message || error), lexicalCandidateCount: shortlistCandidates.length, universeCandidateCount: lexicalPool.universe.length, hardValidPopulationCount: lexicalPool.hardCandidates.length, hardValidCandidateCount: hardValid.length, ettinCandidateCount: bounded.length });
       return { status: 'operational-failure', reason: error.code || String(error.message || error) };
@@ -4450,6 +4977,18 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     return true;
   }
 
+  // Opt-in setup only: human guesses still use the normal referee/reveal path.
+  function releaseHumanPlaytestSetupForTesting() {
+    if (!isHumanPlaytestMode() || HUMAN_PLAYTEST_TURN.setupActive !== true ||
+        !gameStarted || isGameOver || gameEnded ||
+        handRaiseState !== HAND_RAISE_STATES.OPEN || humanHandRaised) return false;
+    HUMAN_PLAYTEST_TURN.setupActive = false;
+    emitDiagnosticEvent('human-playtest-setup-released');
+    scheduleAiTurn(true);
+    return true;
+  }
+
+  globalThis.releaseHumanPlaytestSetupForTesting = releaseHumanPlaytestSetupForTesting;
   globalThis.resolveCurrentAnswerForTesting = resolveCurrentAnswerForTesting;
   globalThis.resolveRaisedAiHandForTesting = resolveCurrentAnswerForTesting;
   globalThis.getEligibleAiSlotsForTesting = getEligibleAiSlots;
@@ -4594,6 +5133,11 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     runtimeCheckInProgress = false;
     updateStartGameButton();
     setMessage("");
+    if (isHumanPlaytestMode() && /(?:^\?|&)humanPlaytestSetup=1(?:&|$)/.test(window.location?.search || '')) {
+      HUMAN_PLAYTEST_TURN.setupActive = true;
+      updateHumanRaiseHandButton();
+      emitDiagnosticEvent('human-playtest-setup-started');
+    }
     scheduleAiTurn(true);
   }
 
@@ -4603,6 +5147,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
 
   function scheduleAiTurn(firstTurn) {
     if (!gameStarted) return;
+    if (isHumanPlaytestMode() && HUMAN_PLAYTEST_TURN.setupActive === true) return;
     if (!aiLogicSettingsLoaded || !timingSettingsAreUsable()) {
       console.error("AI turn engine is paused because timing settings are unavailable or invalid.");
       return;
