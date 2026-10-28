@@ -120,5 +120,19 @@
     "noRepeatedWrongGuessSameSlot": true,
     "allowSameWordDifferentSlot": true,
     "neverGuessSolvedSlot": true
+  },
+  "assistance": {
+    "enabled": false,
+    "intervals": {
+      "generalWrong": { "min": 4, "max": 8 },
+      "generalCorrect": { "min": 8, "max": 12 },
+      "pronounWrong": { "min": 3, "max": 6 },
+      "pronounCorrect": { "min": 6, "max": 10 }
+    },
+    "minimumOrdinaryGuesses": 2
+  },
+  "gameplaySpeed": {
+    "mode": "human",
+    "percent": 70
   }
 }

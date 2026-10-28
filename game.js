@@ -39,6 +39,7 @@ window.addEventListener("load", () => {
   let puzzleList = [];
   let editingPuzzle = null;
   let editingImageRemoved = false;
+  let editingLoadVersion = 0;
   const AI_LOGIC_DEFAULTS = {
     timing: {
       firstGuess: [
@@ -93,6 +94,8 @@ window.addEventListener("load", () => {
   };
   let aiLogicSettings = JSON.parse(JSON.stringify(AI_LOGIC_DEFAULTS));
   let aiLogicSettingsLoaded = false;
+  const gameplaySpeed = globalThis.GGGGameplaySpeed;
+  let turnTiming = gameplaySpeed.snapshot();
   if (adminPanel) adminPanel.classList.add("hidden");
   function showAdminAccess() {
     if (!adminAccessForm || !adminAccessPassword) return;
@@ -115,19 +118,128 @@ window.addEventListener("load", () => {
     return JSON.parse(JSON.stringify(settings));
   }
 
+  function applyGameplaySpeed(setting) {
+    gameplaySpeed.set(setting);
+    const timing = gameplaySpeed.snapshot();
+    for (const [property, baseline] of [
+      ["--gameplay-hand-duration", 1800], ["--gameplay-wrong-duration", 250],
+      ["--gameplay-capitalization-duration", 1450],
+    ]) document.documentElement.style.setProperty(property, timing.duration(baseline, "decoration") + "ms");
+  }
+
+  function renderGameplaySpeedSettings() {
+    const form = document.getElementById("gameplaySpeedForm");
+    if (!form) return;
+    const setting = gameplaySpeed.get();
+    form.elements.percent.value = setting.mode === "human" ? setting.percent : 100;
+    form.elements.maxTesting.checked = setting.mode === "max-testing";
+    form.elements.save.disabled = !aiLogicSettingsLoaded;
+    updateGameplaySpeedDraft();
+  }
+
+  function updateGameplaySpeedDraft() {
+    const form = document.getElementById("gameplaySpeedForm");
+    if (!form) return;
+    form.elements.percent.disabled = form.elements.maxTesting.checked;
+    document.getElementById("gameplaySpeedValue").textContent = form.elements.percent.value + "%";
+  }
+
+  const gameplaySpeedForm = document.getElementById("gameplaySpeedForm");
+  gameplaySpeedForm?.addEventListener("input", updateGameplaySpeedDraft);
+  document.getElementById("resetGameplaySpeed")?.addEventListener("click", () => {
+    gameplaySpeedForm.elements.percent.value = 100;
+    gameplaySpeedForm.elements.maxTesting.checked = false;
+    updateGameplaySpeedDraft();
+    document.getElementById("gameplaySpeedStatus").textContent = "100% selected. Save to apply.";
+  });
+  gameplaySpeedForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!aiLogicSettingsLoaded || gameplaySpeedForm.elements.save.disabled) return;
+    const status = document.getElementById("gameplaySpeedStatus");
+    gameplaySpeedForm.elements.save.disabled = true;
+    try {
+      const setting = gameplaySpeed.validateSetting(gameplaySpeedForm.elements.maxTesting.checked
+        ? { mode: "max-testing" }
+        : { mode: "human", percent: Number(gameplaySpeedForm.elements.percent.value) });
+      const next = { ...cloneAiSettings(aiLogicSettings), gameplaySpeed: setting };
+      const response = await fetch("/api/ai-logic-settings", {
+        method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
+      });
+      if (!response.ok) throw new Error("Speed could not be saved. Check administrator access and try again.");
+      aiLogicSettings = next;
+      applyGameplaySpeed(setting);
+      emitDiagnosticEvent("gameplay-speed-setting", { gameplaySpeed: setting, applies: "next-opportunity" });
+      status.textContent = "Saved. Applies to the next turn or game.";
+    } catch (error) { status.textContent = error.message; }
+    finally { gameplaySpeedForm.elements.save.disabled = false; }
+  });
+
   async function loadAiLogicSettings() {
     try {
       const response = await fetch("/api/ai-logic-settings");
       if (!response.ok) throw new Error("Saved AI settings could not be loaded.");
       aiLogicSettings = await response.json();
+      applyGameplaySpeed(Object.hasOwn(aiLogicSettings, "gameplaySpeed") ? aiLogicSettings.gameplaySpeed : gameplaySpeed.DEFAULT);
       aiLogicSettingsLoaded = true;
+      renderGameplaySpeedSettings();
+      if (document.getElementById('assistanceSettingsForm')) renderAssistanceSettings();
     } catch (error) {
       aiLogicSettingsLoaded = false;
       aiLogicSettings = cloneAiSettings(AI_LOGIC_DEFAULTS);
+      applyGameplaySpeed(gameplaySpeed.DEFAULT);
       console.error("Saved AI settings could not be loaded.", error);
+      if (document.getElementById('assistanceSettingsForm')) renderAssistanceSettings();
     }
   }
   loadAiLogicSettings();
+
+  function renderAssistanceSettings(message) {
+    const form = document.getElementById('assistanceSettingsForm');
+    if (!form) return;
+    const saved = normalizeAssistanceSettings(aiLogicSettings?.assistance);
+    const setting = saved || { enabled: false, minimumOrdinaryGuesses: 2, intervals: {
+      generalWrong: { min: 4, max: 8 }, generalCorrect: { min: 8, max: 12 },
+      pronounWrong: { min: 3, max: 6 }, pronounCorrect: { min: 6, max: 10 },
+    } };
+    form.elements.enabled.checked = setting.enabled;
+    form.elements.minimumOrdinaryGuesses.value = setting.minimumOrdinaryGuesses;
+    for (const [key, pair] of Object.entries(setting.intervals)) {
+      form.elements[key + 'Min'].value = pair.min;
+      form.elements[key + 'Max'].value = pair.max;
+    }
+    form.elements.save.disabled = !aiLogicSettingsLoaded;
+    document.getElementById('assistanceSettingsStatus').textContent = message || (!aiLogicSettingsLoaded
+      ? 'Saved settings could not be loaded. Reload before saving.'
+      : saved ? 'Saved values shown. Changes apply from the next game.'
+        : 'No valid assistance settings are saved. Assistance is OFF; the suggested values shown need to be saved.');
+  }
+
+  async function saveAssistanceSettings(event) {
+    event.preventDefault();
+    const form = document.getElementById('assistanceSettingsForm');
+    if (!aiLogicSettingsLoaded || form.elements.save.disabled) return;
+    const status = document.getElementById('assistanceSettingsStatus');
+    form.elements.save.disabled = true;
+    try {
+      const intervals = {};
+      for (const key of ['generalWrong', 'generalCorrect', 'pronounWrong', 'pronounCorrect'])
+        intervals[key] = { min: Number(form.elements[key + 'Min'].value), max: Number(form.elements[key + 'Max'].value) };
+      const assistance = normalizeAssistanceSettings({ enabled: form.elements.enabled.checked, intervals,
+        minimumOrdinaryGuesses: Number(form.elements.minimumOrdinaryGuesses.value) });
+      if (!assistance) throw new Error('Use positive whole numbers, minimum no greater than maximum, and ETTIN spacing from 2 to 10.');
+      const next = { ...cloneAiSettings(aiLogicSettings), assistance };
+      const response = await fetch('/api/ai-logic-settings', {
+        method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next),
+      });
+      if (!response.ok) throw new Error('Assistance settings could not be saved. Check administrator access and try again.');
+      aiLogicSettings = next;
+      renderAssistanceSettings('Saved. Assistance is ' + (assistance.enabled ? 'ON' : 'OFF') + ' for the next game.');
+    } catch (error) { status.textContent = error.message; }
+    finally { form.elements.save.disabled = false; }
+  }
+
+  document.getElementById('assistanceSettingsForm')?.addEventListener('submit', saveAssistanceSettings);
 
   let vault1Words = [];
 
@@ -148,7 +260,7 @@ window.addEventListener("load", () => {
   let vault3ByPuzzle = {};
 
   async function loadPuzzleVault3() {
-    if (isHumanPlaytestMode()) return;
+    if (usesPreparedAiRoute()) return;
     try {
       const response = await fetch("vaults/vault-3.json");
       if (!response.ok) throw new Error(`Vault 3 failed to load: ${response.status}`);
@@ -164,7 +276,7 @@ window.addEventListener("load", () => {
   let vault5ByPuzzle = {};
 
   async function loadPuzzleVault5() {
-    if (isHumanPlaytestMode()) return;
+    if (usesPreparedAiRoute()) return;
     try {
       const response = await fetch("vaults/vault-5.json");
       if (!response.ok) throw new Error(`Vault 5 failed to load: ${response.status}`);
@@ -181,6 +293,7 @@ window.addEventListener("load", () => {
     button.addEventListener("click", () => {
       document.querySelectorAll(".admin-screen").forEach((screen) => screen.classList.add("hidden"));
       document.getElementById(button.dataset.adminScreen)?.classList.remove("hidden");
+      if (button.dataset.adminScreen === 'adminAssistance') renderAssistanceSettings();
     });
   });
 
@@ -294,17 +407,24 @@ window.addEventListener("load", () => {
     if (!editPuzzleSelector) return;
     const source = puzzleList[Number(editPuzzleSelector.value)];
     if (typeof source !== "string") return;
+    const version = ++editingLoadVersion;
+    editingPuzzle = null;
+    if (savePuzzleChangesBtn) savePuzzleChangesBtn.disabled = true;
+    document.getElementById('assistanceWordRows')?.replaceChildren();
     try {
-      const response = await fetch(source);
+      const response = await fetch(source, { cache: 'no-store' });
       if (!response.ok) throw new Error("Puzzle could not be loaded");
       const puzzle = await response.json();
+      if (version !== editingLoadVersion) return;
       editingPuzzle = {
         number: puzzleNumberFromSource(source),
         text: String(puzzle.text || ""),
         image: String(puzzle.image || ""),
+        assistance: puzzle.assistance,
       };
       editingImageRemoved = false;
       if (editPuzzleText) editPuzzleText.value = editingPuzzle.text;
+      renderAssistanceWords();
       if (editPuzzleCurrentImageLabel) editPuzzleCurrentImageLabel.textContent = `Current image: ${editingPuzzle.image || "none"}`;
       if (editPuzzleCurrentImagePreview) {
         if (editingPuzzle.image) {
@@ -319,12 +439,78 @@ window.addEventListener("load", () => {
       if (editPuzzleSelectedImage) editPuzzleSelectedImage.textContent = "";
       updateEditStatus("");
     } catch (error) {
+      if (version !== editingLoadVersion) return;
       editingPuzzle = null;
       updateEditStatus("The puzzle could not be loaded.");
+    } finally {
+      if (version === editingLoadVersion && savePuzzleChangesBtn) savePuzzleChangesBtn.disabled = !editingPuzzle;
     }
   }
 
+  function renderAssistanceWords() {
+    const rows = document.getElementById('assistanceWordRows');
+    if (!rows || !editingPuzzle) return;
+    rows.replaceChildren();
+    rows.disabled = false;
+    document.getElementById('assistanceWordsPuzzle').textContent = `Puzzle ${formatPuzzleNumber(editingPuzzle.number)} — answer positions`;
+    let entries = new Map();
+    const status = document.getElementById('assistanceWordsStatus');
+    status.textContent = '';
+    if (editingPuzzle.assistance !== undefined) {
+      try {
+        const metadata = globalThis.GGGAssistanceAuthoring.validate(editingPuzzle.assistance, editingPuzzle.text);
+        entries = new Map(metadata.slots.map(entry => [entry.slotIndex, entry]));
+      } catch {
+        status.textContent = 'Existing assistance data is invalid for this sentence. Saving will replace it with the rows below.';
+      }
+    }
+    for (const slot of globalThis.GGGAssistanceAuthoring.slots(editingPuzzle.text).filter(slot => slot.length)) {
+      const entry = entries.get(slot.slotIndex);
+      const row = document.createElement('div');
+      row.className = 'assistance-word-row';
+      row.dataset.slotIndex = slot.slotIndex;
+      row.dataset.answerToken = slot.answerToken;
+      const label = document.createElement('label');
+      const wrong = document.createElement('textarea');
+      wrong.id = `assistanceWrong${slot.slotIndex}`;
+      wrong.rows = 2;
+      wrong.value = (entry?.wrong || []).join('\n');
+      label.htmlFor = wrong.id;
+      label.textContent = `${slot.slotIndex + 1}. ${slot.answerToken} (${slot.length} letters)`;
+      const pronounLabel = document.createElement('label');
+      const pronoun = document.createElement('input');
+      pronoun.type = 'checkbox';
+      pronoun.checked = entry?.pronoun === true;
+      pronoun.setAttribute('aria-label', `Position ${slot.slotIndex + 1}: ${slot.answerToken} is a pronoun`);
+      pronounLabel.append(pronoun, ' Pronoun');
+      row.append(label, wrong, pronounLabel);
+      rows.appendChild(row);
+    }
+  }
+
+  function updateAssistanceSentenceDraft() {
+    const rows = document.getElementById('assistanceWordRows');
+    if (!rows || !editingPuzzle) return;
+    const changed = editPuzzleText.value.trim() !== editingPuzzle.text;
+    rows.disabled = changed;
+    document.getElementById('assistanceWordsStatus').textContent = changed
+      ? 'The sentence has changed. Save it first; previous assistance words and pronoun marks will be cleared. Then author the new positions.' : '';
+  }
+
+  function readAssistanceWordsDraft() {
+    const rows = document.getElementById('assistanceWordRows');
+    const slots = Array.from(rows.querySelectorAll('.assistance-word-row')).map(row => ({
+      slotIndex: Number(row.dataset.slotIndex), answerToken: row.dataset.answerToken,
+      wrong: row.querySelector('textarea').value.split(/[,\n\r]+/).map(word => word.trim()).filter(Boolean),
+      pronoun: row.querySelector('input').checked,
+    })).filter(entry => entry.wrong.length || entry.pronoun);
+    return globalThis.GGGAssistanceAuthoring.validate({ version: 1, sourceText: editingPuzzle.text, slots }, editingPuzzle.text);
+  }
+
+  editPuzzleText?.addEventListener('input', updateAssistanceSentenceDraft);
+
   function closeEditPuzzle() {
+    editingLoadVersion++;
     editingPuzzle = null;
     editingImageRemoved = false;
     if (editPuzzlePanel) editPuzzlePanel.classList.add("hidden");
@@ -332,7 +518,7 @@ window.addEventListener("load", () => {
   }
 
   async function savePuzzleChanges() {
-    if (!editingPuzzle || !editPuzzleText) return;
+    if (!editingPuzzle || !editPuzzleText || savePuzzleChangesBtn?.disabled) return;
     const text = editPuzzleText.value.trim();
     const file = editPuzzleImage?.files?.[0];
     if (!text) {
@@ -344,15 +530,29 @@ window.addEventListener("load", () => {
       return;
     }
     if (savePuzzleChangesBtn) savePuzzleChangesBtn.disabled = true;
+    if (editPuzzleSelector) editPuzzleSelector.disabled = true;
+    editPuzzleText.disabled = true;
+    const wordRows = document.getElementById('assistanceWordRows');
+    if (wordRows) wordRows.disabled = true;
+    const editControls = [cancelPuzzleEditBtn, openEditPuzzleBtn, editPuzzleImage, chooseEditPuzzleImageBtn, removeEditPuzzleImageBtn];
+    editControls.forEach(control => { if (control) control.disabled = true; });
     updateEditStatus("Saving changes…");
     try {
+      const payload = text === editingPuzzle.text ? { assistance: readAssistanceWordsDraft() } : {};
+      if (file) payload.imageData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('The selected image could not be read.'));
+        reader.readAsDataURL(file);
+      });
       const extension = file ? (file.type === "image/png" ? "png" : "jpg") : "";
       const removeImage = !file && editingImageRemoved ? "1" : "0";
       const saveUrl = `/api/puzzles?number=${encodeURIComponent(editingPuzzle.number)}&text=${encodeURIComponent(text)}&extension=${extension}&removeImage=${removeImage}`;
       const response = await fetch(saveUrl, {
         method: "PUT",
-        headers: file ? { "Content-Type": file.type } : {},
-        body: file || undefined,
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       const responseText = await response.text();
       let result;
@@ -361,6 +561,8 @@ window.addEventListener("load", () => {
       if (result.vault3Cleared && vault3ByPuzzle) delete vault3ByPuzzle[String(editingPuzzle.number)];
       editingPuzzle.text = text;
       editingPuzzle.image = result.image || "";
+      editingPuzzle.assistance = result.assistance;
+      renderAssistanceWords();
       editingImageRemoved = false;
       if (editPuzzleCurrentImageLabel) editPuzzleCurrentImageLabel.textContent = `Current image: ${editingPuzzle.image || "none"}`;
       if (editPuzzleCurrentImagePreview) {
@@ -374,11 +576,18 @@ window.addEventListener("load", () => {
       }
       if (editPuzzleImage) editPuzzleImage.value = "";
       if (editPuzzleSelectedImage) editPuzzleSelectedImage.textContent = "";
+      // Refresh the current board too, so the next game sees newly authored slots.
+      if (puzzleNumberFromSource(puzzleList[currentPuzzleIndex], currentPuzzleIndex + 1) === editingPuzzle.number)
+        await loadPuzzleAtIndex(currentPuzzleIndex);
       updateEditStatus(`Puzzle ${formatPuzzleNumber(editingPuzzle.number)} updated successfully.${result.vault3Cleared ? " Vault 3 needs to be regenerated." : ""}`);
     } catch (error) {
       updateEditStatus(error.message || "The puzzle could not be updated.");
     } finally {
       if (savePuzzleChangesBtn) savePuzzleChangesBtn.disabled = false;
+      if (editPuzzleSelector) editPuzzleSelector.disabled = false;
+      editPuzzleText.disabled = false;
+      if (wordRows) wordRows.disabled = editPuzzleText.value.trim() !== editingPuzzle?.text;
+      editControls.forEach(control => { if (control) control.disabled = false; });
     }
   }
 
@@ -540,6 +749,10 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   let isAiTurnActive = false;
   let gameStarted = false;
   let aiTurnTimer = null;
+  let aiScheduleGeneration = 0;
+  let recognitionGeneration = 0;
+  let opportunityGeneration = 0;
+  let aiCompletionTimer = null;
   let aiTurnState = "idle";
   let aiGuessNumber = 1;
   let raisedHandCharacter = null;
@@ -587,6 +800,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   const HINT_DISPLAY = { pending: null, sequence: 0 };
   const HUMAN_PLAYTEST_TURN = { generation: 0, prepared: null, emptyBoardKey: null, opportunity: 0 };
   const ETTIN_ATTENTION = { gameId: 0, boardKey: null, slots: new Map(), currentSlot: null };
+  const ASSISTANCE = { round: 0, pictureViewed: false, metadata: null, slots: new Map(), controller: null };
   const ETTIN_SHADOW_ENABLED = false;
   const ETTIN_CONTEXTUAL_ACCESS_ENABLED = true;
   const ETTIN_CONTEXTUAL_ACCESS_CAP = 48;
@@ -824,11 +1038,16 @@ const puzzleImageEl = document.getElementById("puzzleImage");
 
   async function loadPuzzleAtIndex(index) {
     if (puzzleList.length === 0) return;
+    if (globalThis.GGGVisualCueExperiment?.enabled) {
+      index = puzzleList.indexOf(globalThis.GGGVisualCueExperiment.puzzlePath);
+      if (index < 0) { setMessage('Puzzle ' + globalThis.GGGVisualCueExperiment.puzzleNumber + ' is unavailable.'); return; }
+    }
     if (isHumanPlaytestMode() && gameStarted && !gameEnded) emitDiagnosticEvent('complete', { reason: 'changed-puzzle' });
     cancelAiTurn();
     resetHandRaiseState();
     clearAiWrongGuessMemory();
     gameStarted = false;
+    resetAssistanceRound();
     updateStartGameButton();
     currentPuzzleIndex = Math.max(0, Math.min(index, puzzleList.length - 1));
 
@@ -850,7 +1069,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       if (previousPuzzleBtn) previousPuzzleBtn.disabled = false;
       puzzleImageDataUrl = puzzle.image || null;
       currentPuzzleText = puzzle.text || "";
-      renderPuzzle(puzzle.text);
+      renderPuzzle(puzzle.text, puzzle.assistance);
     } catch (error) {
       console.error("Puzzle file failed to load.", error);
       setMessage("Puzzle file failed to load.");
@@ -1030,12 +1249,14 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   }
 
   function cancelAiTurn() {
+    aiScheduleGeneration++;
     if (aiTurnTimer !== null) clearTimeout(aiTurnTimer);
     aiTurnTimer = null;
     if (aiTurnState !== "executing") aiTurnState = "stopped";
   }
 
   function cancelTeacherRecognition() {
+    recognitionGeneration++;
     if (recognitionTimer !== null) clearTimeout(recognitionTimer);
     recognitionTimer = null;
   }
@@ -1052,25 +1273,245 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     humanRaiseHandBtn.disabled = !gameStarted || handRaiseState === HAND_RAISE_STATES.ANSWER_LOCKED;
   }
 
-  // Opt-in diagnostic path; the ordinary launcher and saved settings stay intact.
+  // Playtest timing, setup, and detailed logging remain explicitly opt-in.
   function isHumanPlaytestMode() {
     return /(?:^\?|&)humanPlaytestMode=1(?:&|$)/.test(window.location?.search || "");
   }
 
+  function isLegacyAiMode() {
+    return /(?:^\?|&)aiMode=legacy(?:&|$)/.test(window.location?.search || "");
+  }
+
+  // Keep the established ETTIN selection path; ordinary games now use it too.
   function isEttinPilotMode() {
-    return isHumanPlaytestMode() && /(?:^\?|&)ettinPilot=1(?:&|$)/.test(window.location?.search || "");
+    if (isLegacyAiMode() || isAiMaximumAccuracyMode()) return false;
+    return !isHumanPlaytestMode() || Boolean(globalThis.GGGVisualCueExperiment?.enabled) ||
+      /(?:^\?|&)ettinPilot=1(?:&|$)/.test(window.location?.search || "");
+  }
+
+  function usesPreparedAiRoute() {
+    return !isLegacyAiMode() && (isEttinPilotMode() || isHumanPlaytestMode());
+  }
+
+  // Assistance owns its counters and private answer access. ETTIN receives only
+  // its usual public board; no assisted word enters an ETTIN candidate pool.
+  function normalizeAssistanceSettings(value) {
+    const keys = ['generalWrong', 'generalCorrect', 'pronounWrong', 'pronounCorrect'];
+    if (!value || typeof value.enabled !== 'boolean' ||
+        !Number.isInteger(value.minimumOrdinaryGuesses) || value.minimumOrdinaryGuesses < 2 ||
+        value.minimumOrdinaryGuesses > 10) return null;
+    const intervals = {};
+    for (const key of keys) {
+      const pair = value.intervals?.[key];
+      if (!pair || !Number.isSafeInteger(pair.min) || !Number.isSafeInteger(pair.max) ||
+          pair.min < 1 || pair.max < pair.min) return null;
+      intervals[key] = { min: pair.min, max: pair.max };
+    }
+    return { enabled: value.enabled, intervals, minimumOrdinaryGuesses: value.minimumOrdinaryGuesses };
+  }
+
+  function assistanceRandomInteger(min, max) {
+    // Independent of Math.random(), which ordinary inference and pacing use.
+    const words = new Uint32Array(2);
+    globalThis.crypto.getRandomValues(words);
+    const unit = (words[0] * 2097152 + (words[1] >>> 11)) / 9007199254740992;
+    return min + Math.floor(unit * (max - min + 1));
+  }
+
+  function createAssistanceController(settings, options = {}, draw = assistanceRandomInteger) {
+    const config = normalizeAssistanceSettings(settings);
+    const enabled = config?.enabled === true;
+    const counters = {};
+    const committed = new WeakSet();
+    let generalActive = false;
+    let ordinaryGuesses = 0;
+    const reset = key => {
+      const { min, max } = config.intervals[key];
+      counters[key] = { count: 0, threshold: draw(min, max), due: false };
+    };
+    const activatePicture = () => {
+      if (!enabled || generalActive) return;
+      generalActive = true;
+      reset('generalWrong'); reset('generalCorrect');
+    };
+    if (enabled) {
+      if (options.pronounsEligible) { reset('pronounWrong'); reset('pronounCorrect'); }
+      if (options.pictureViewed) activatePicture();
+    }
+    return {
+      enabled,
+      activatePicture,
+      canUse: key => enabled && ordinaryGuesses >= config.minimumOrdinaryGuesses && counters[key]?.due === true,
+      pick: choices => enabled && choices.length ? choices[draw(0, choices.length - 1)] : null,
+      commit(attempt, event) {
+        if (!enabled || !attempt || committed.has(attempt) || !['correct', 'incorrect'].includes(event.result)) return;
+        committed.add(attempt);
+        if (event.source === 'ettin') ordinaryGuesses = Math.min(config.minimumOrdinaryGuesses, ordinaryGuesses + 1);
+        else if (event.source === 'assistance') ordinaryGuesses = 0;
+        if (event.result === 'incorrect') {
+          for (const [key, counter] of Object.entries(counters)) {
+            if (key.startsWith('pronoun') && !event.pronounsEligible) continue;
+            if (!counter.due) { counter.count++; counter.due = counter.count >= counter.threshold; }
+          }
+          if (event.pronoun) reset('pronounWrong');
+          if (event.source === 'assistance' && event.mechanism === 'generalWrong') reset('generalWrong');
+        } else {
+          if (generalActive) reset('generalCorrect');
+          if (event.pronoun) { reset('pronounWrong'); reset('pronounCorrect'); }
+        }
+      },
+      snapshot: () => ({ enabled, generalActive, ordinaryGuesses,
+        counters: JSON.parse(JSON.stringify(counters)) }),
+    };
+  }
+
+  function resetAssistanceRound(metadata = null) {
+    ASSISTANCE.round++;
+    ASSISTANCE.pictureViewed = false;
+    ASSISTANCE.metadata = metadata;
+    ASSISTANCE.slots = new Map();
+    ASSISTANCE.controller = null;
+  }
+
+  function assistanceWord(word) {
+    return String(word || '').trim().toLowerCase().replace(/[’‘]/g, "'").replace(/[‐‑]/g, '-');
+  }
+
+  function assistancePronouns() {
+    return ['i', 'me', 'you', 'he', 'him', 'she', 'her', 'it', 'we', 'us', 'they', 'them',
+      'mine', 'yours', 'his', 'hers', 'ours', 'theirs', 'who', 'whom', 'whose', 'this', 'that', 'these', 'those'];
+  }
+
+  function assistanceAnswerToken(target) {
+    const slot = getHumanPlaytestPublicState(target).slots[target.slotIndex];
+    return globalThis.GGGHumanPlaytest.tokenAt(slot, getActualWord(target.group));
+  }
+
+  function readAssistanceSlots(metadata) {
+    const result = new Map();
+    if (metadata?.version !== 1 || metadata.sourceText !== currentPuzzleText || !Array.isArray(metadata.slots)) return result;
+    const groups = Array.from(document.querySelectorAll('.word-group'));
+    const duplicates = new Set();
+    for (const entry of metadata.slots) {
+      if (!entry || !Number.isInteger(entry.slotIndex) || entry.slotIndex < 0 || duplicates.has(entry.slotIndex)) continue;
+      if (result.has(entry.slotIndex)) { result.delete(entry.slotIndex); duplicates.add(entry.slotIndex); continue; }
+      const group = groups[entry.slotIndex];
+      if (!group || !group.querySelectorAll('.letter-block').length ||
+          entry.answerToken !== assistanceAnswerToken({ group, slotIndex: entry.slotIndex })) continue;
+      if (entry.pronoun !== undefined && typeof entry.pronoun !== 'boolean') continue;
+      result.set(entry.slotIndex, { answerToken: entry.answerToken, pronoun: entry.pronoun === true,
+        wrong: Array.isArray(entry.wrong) ? entry.wrong.filter(word => typeof word === 'string').slice() : [] });
+    }
+    return result;
+  }
+
+  function assistanceEligibleSlots() {
+    return getEligibleAiSlots().filter(slot => getHiddenBlocks(slot.group).length > 0);
+  }
+
+  function hasAssistancePronouns() {
+    return assistanceEligibleSlots().some(slot => ASSISTANCE.slots.get(slot.slotIndex)?.pronoun);
+  }
+
+  function startAssistanceGame() {
+    ASSISTANCE.controller = createAssistanceController(null);
+    ASSISTANCE.slots = new Map();
+    if (!isEttinPilotMode() || !normalizeAssistanceSettings(aiLogicSettings?.assistance)?.enabled) return;
+    try {
+      ASSISTANCE.slots = readAssistanceSlots(ASSISTANCE.metadata);
+      ASSISTANCE.controller = createAssistanceController(aiLogicSettings.assistance, {
+        pictureViewed: ASSISTANCE.pictureViewed, pronounsEligible: hasAssistancePronouns(),
+      });
+    } catch (error) {
+      ASSISTANCE.controller = createAssistanceController(null);
+      console.error('Assistance disabled: initialization failed.', error);
+    }
+  }
+
+  function noteAssistancePictureOpened() {
+    ASSISTANCE.pictureViewed = true;
+    if (gameStarted) ASSISTANCE.controller?.activatePicture();
+  }
+
+  function assistanceCandidateProblem(pool, candidate) {
+    const target = pool?.targetSlot;
+    const mechanism = candidate?.assistanceMechanism;
+    if (!ASSISTANCE.controller?.enabled || !isEttinPilotMode() || !gameStarted || gameEnded || isGameOver ||
+        !ASSISTANCE.controller.canUse(mechanism)) return 'assistance-not-due';
+    if (candidate.assistanceRound !== ASSISTANCE.round || candidate.assistanceGameId !== ETTIN_ATTENTION.gameId)
+      return 'stale-assistance-round';
+    if (!target || !assistanceEligibleSlots().some(slot => slot.slotIndex === target.slotIndex && slot.group === target.group))
+      return 'assistance-slot-unavailable';
+    const state = getHumanPlaytestPublicState(target);
+    if (candidate.publicBoardKey !== globalThis.GGGHumanPlaytest.boardKey(state)) return 'stale-board';
+    const surface = candidate.submissionSurface;
+    if (surface !== candidate.word || !isSafelySubmittableAiCandidate(surface, target.length) ||
+        !globalThis.GGGHumanPlaytest.matchesToken(surface, state.slots[target.slotIndex]) ||
+        !globalThis.GGGHumanPlaytest.matchesCasePattern(surface, state.slots[target.slotIndex])) return 'assistance-token-invalid';
+    if (hasWrongAiGuessForSlot(target.slotIndex, surface) ||
+        (state.rejectedWordsBySlot[target.slotIndex] || []).some(word => assistanceWord(word) === assistanceWord(surface)))
+      return 'public-rejection';
+    if (globalThis.vault4Dictionary.isAbsolutelyBlocked(surface)) return 'absolute-block';
+    const answerToken = assistanceAnswerToken(target);
+    const correct = surface.replace(/[^A-Za-z]/g, '') === getActualWord(target.group);
+    const entry = ASSISTANCE.slots.get(target.slotIndex);
+    if (mechanism === 'generalCorrect') return correct ? null : 'assistance-answer-mismatch';
+    if (!entry || entry.answerToken !== answerToken) return 'assistance-slot-mismatch';
+    if (mechanism === 'pronounCorrect') return entry.pronoun && correct ? null : 'assistance-pronoun-mismatch';
+    if (correct) return 'assistance-wrong-is-correct';
+    if (mechanism === 'pronounWrong') return entry.pronoun && assistancePronouns().includes(assistanceWord(surface)) &&
+      (assistanceWord(surface) !== 'i' || surface === 'I') ? null : 'assistance-pronoun-mismatch';
+    if (mechanism === 'generalWrong') return entry.wrong.some(word => assistanceWord(word) === assistanceWord(surface))
+      ? null : 'assistance-word-not-authored';
+    return 'unknown-assistance-mechanism';
+  }
+
+  function prepareAssistanceProposal(character, boardKey) {
+    const controller = ASSISTANCE.controller;
+    if (!controller?.enabled || !isEttinPilotMode()) return null;
+    for (const mechanism of ['pronounCorrect', 'generalCorrect', 'pronounWrong', 'generalWrong']) {
+      if (!controller.canUse(mechanism)) continue;
+      const choices = [];
+      for (const target of assistanceEligibleSlots()) {
+        const entry = ASSISTANCE.slots.get(target.slotIndex);
+        if (mechanism.startsWith('pronoun') && !entry?.pronoun) continue;
+        const words = mechanism.endsWith('Correct') ? [assistanceAnswerToken(target)]
+          : mechanism === 'pronounWrong' ? assistancePronouns() : entry?.wrong || [];
+        for (const word of words) {
+          const surface = applyAiTargetCapitalization(word, target);
+          const candidate = { proposalSource: 'assistance', assistanceMechanism: mechanism,
+            assistanceRound: ASSISTANCE.round, assistanceGameId: ETTIN_ATTENTION.gameId,
+            word: surface, submissionSurface: surface, normalized: assistanceWord(surface), publicBoardKey: boardKey };
+          const pool = { proposalSource: 'assistance', targetSlot: target };
+          if (!assistanceCandidateProblem(pool, candidate)) choices.push({ pool, candidate, character, source: 'assistance' });
+        }
+      }
+      if (choices.length) return controller.pick(choices);
+    }
+    return null;
+  }
+
+  function observeAssistanceResult(attempt, result, character, slotIndex, word, pronounsEligible) {
+    if (!ASSISTANCE.controller?.enabled) return;
+    const context = attempt.aiGuessContext;
+    const pronoun = ASSISTANCE.slots.get(slotIndex)?.pronoun === true &&
+      (result === 'correct' || assistancePronouns().includes(assistanceWord(word)));
+    ASSISTANCE.controller.commit(attempt, { result, pronoun, pronounsEligible,
+      source: character === 'human' ? 'human' : context?.source,
+      mechanism: context?.mechanism });
   }
 
   function getHumanCandidateProvider() {
+    if (globalThis.GGGVisualCueExperiment?.enabled) return globalThis.GGGCandidateProviders?.Repair4CandidateProvider || globalThis.GGGHumanPlaytest;
     return globalThis.GGGCandidateProviders?.get(window.location?.search || '') || globalThis.GGGHumanPlaytest;
   }
 
   function isSituationPilotMode() {
-    return isHumanPlaytestMode() && /(?:^\?|&)situationPilot=1(?:&|$)/.test(window.location?.search || '');
+    return !globalThis.GGGVisualCueExperiment?.enabled && isHumanPlaytestMode() && /(?:^\?|&)situationPilot=1(?:&|$)/.test(window.location?.search || '');
   }
 
   function logEttinPilot(stage, targetSlot, detail = {}) {
-    if (!isEttinPilotMode() || !targetSlot) return;
+    if (!isHumanPlaytestMode() || !isEttinPilotMode() || !targetSlot) return;
     const state = getHumanPlaytestPublicState(targetSlot);
     const slot = state.slots[targetSlot.slotIndex];
     const publicBoardKey = globalThis.GGGHumanPlaytest.boardKey(state);
@@ -1131,6 +1572,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   }
 
   function logHumanPlaytestTransition(transition, reason = null) {
+    if (!isHumanPlaytestMode()) return;
     const prepared = HUMAN_PLAYTEST_TURN.prepared;
     const target = prepared?.pool?.targetSlot || currentAiTargetSlot;
     const publicState = target ? getHumanPlaytestPublicState(target) : null;
@@ -1299,6 +1741,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   }
 
   function humanPlaytestCandidateProblem(pool, candidate) {
+    if (candidate?.proposalSource === 'assistance') return assistanceCandidateProblem(pool, candidate);
     if (!pool || !candidate) return 'no-valid-slot';
     if (pool.targetSlot.group.classList.contains('revealed')) return 'slot-solved';
     const state = getHumanPlaytestPublicState(pool.targetSlot);
@@ -1342,6 +1785,18 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const initial = getEligibleAiSlots()[0];
     if (!initial) return cancelHumanPlaytestOpportunity('no-valid-slot');
     const boardKey = globalThis.GGGHumanPlaytest.boardKey(getHumanPlaytestPublicState(initial));
+    // Assistance uses this same opportunity, before ETTIN's empty-board park.
+    // Selection reserves nothing: interruption leaves due counters untouched.
+    const assisted = prepareAssistanceProposal(character, boardKey);
+    if (assisted) {
+      HUMAN_PLAYTEST_TURN.opportunity++;
+      HUMAN_PLAYTEST_TURN.prepared = assisted;
+      currentAiTargetSlot = assisted.pool.targetSlot;
+      currentAiCandidatePool = assisted.pool;
+      currentAiSelectedCandidate = assisted.candidate;
+      aiTurnState = 'idle';
+      return raiseAiHand(character);
+    }
     // A proven empty ETTIN board stays parked until a public turn changes its key.
     if (HUMAN_PLAYTEST_TURN.emptyBoardKey === boardKey) {
       aiTurnState = 'idle';
@@ -1366,6 +1821,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       if (isEttinPilotMode() && result?.status === 'operational-failure') {
         if (!currentEttinOpportunity(ownership)) return false;
         console.error('ETTIN opportunity preparation failed.', result.reason || result.error);
+        setMessage('ETTIN could not prepare a guess. Human turns are still available; no legacy engine was substituted.');
         return cancelHumanPlaytestOpportunity('preparation-failed');
       }
       const pool = isEttinPilotMode() ? result?.pool : result;
@@ -1383,7 +1839,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       }
       HUMAN_PLAYTEST_TURN.emptyBoardKey = null;
       candidate.diagnostic.character = character;
-      HUMAN_PLAYTEST_TURN.prepared = { pool, candidate, character };
+      HUMAN_PLAYTEST_TURN.prepared = { pool, candidate, character, source: isEttinPilotMode() ? 'ettin' : 'diagnostic' };
       currentAiTargetSlot = pool.targetSlot; currentAiCandidatePool = pool; currentAiSelectedCandidate = candidate;
       if (isEttinPilotMode()) {
         logEttinPilot('candidate-selected', pool.targetSlot, { selectedGuess: candidate.word, selectedScore: candidate.score,
@@ -1400,7 +1856,8 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       return raiseAiHand(character);
     } catch (error) {
       if (isEttinPilotMode() && !currentEttinOpportunity(ownership)) return false;
-      console.error('Human playtest candidate preparation failed.', error);
+      console.error('Prepared AI candidate preparation failed.', error);
+      if (isEttinPilotMode()) setMessage('ETTIN could not prepare a guess. Human turns are still available; no legacy engine was substituted.');
       return cancelHumanPlaytestOpportunity('preparation-failed');
     }
   }
@@ -2229,7 +2686,14 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     }
     const started = performance.now();
     try {
-      const scored = await globalThis.GGGEttinProvider.scoreCandidates(snapshot, bounded);
+      const visualCueExperiment = globalThis.GGGVisualCueExperiment?.enabled
+        ? globalThis.GGGVisualCueExperiment.metadata() : null;
+      let scored = await globalThis.GGGEttinProvider.scoreCandidates(snapshot, bounded);
+      if (visualCueExperiment?.count) {
+        if (ownership && !currentEttinOpportunity(ownership)) return { status: 'stale' };
+        scored = await globalThis.GGGVisualCueExperiment.evaluate(
+          globalThis.GGGEttinProvider, snapshot, bounded, scored, visualCueExperiment);
+      }
       const scoringStaleReason = preparationBoardKey !==
         globalThis.GGGHumanPlaytest.boardKey(getHumanPlaytestPublicState(targetSlot)) ? 'stale-board' :
         ownership && !currentEttinOpportunity(ownership) ? 'stale-opportunity' : null;
@@ -2244,7 +2708,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         return { status: 'operational-failure', reason: 'malformed-provider-result' };
       }
       const publicBoardKey = globalThis.GGGHumanPlaytest.boardKey(state);
-      logEttinPilot('ettin-scored', targetSlot, { lexicalCandidateCount: shortlistCandidates.length, universeCandidateCount: lexicalPool.universe.length,
+      logEttinPilot('ettin-scored', targetSlot, { ...(visualCueExperiment ? { visualCueExperiment } : {}), lexicalCandidateCount: shortlistCandidates.length, universeCandidateCount: lexicalPool.universe.length,
         hardValidPopulationCount: lexicalPool.hardCandidates.length, hardValidCandidateCount: hardValid.length,
         baselineCandidateCount: baseline.length, contextualExtensionCount: extension.length,
         contextualExtensionKind: contextualAccess.kind,
@@ -2257,7 +2721,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         partial_neighbor_evidence_present: scored.candidates.some(c => c.partial_neighbor_evidence_present),
         partial_neighbor_evidence_consumed_by_ettin: false,
         ettinRenderedInput: scored.candidates[0] ? { text: scored.candidates[0].ettinRenderedText, targetStart: scored.candidates[0].ettinTargetStart, targetEnd: scored.candidates[0].ettinTargetEnd, targetSlot: targetSlot.slotIndex, maskToken: '[MASK]', maskedNeighborTokenIndices: scored.candidates[0].ettinMaskedNeighborTokenIndices, partialNeighborEvidencePresent: scored.candidates[0].partial_neighbor_evidence_present } : null,
-        rankedCandidates: scored.candidates.map(c => ({ word: c.word, score: c.score, probability: c.probability, rank: c.rank })),
+        rankedCandidates: scored.candidates.map(c => ({ word: c.word, score: c.score, probability: c.probability, rank: c.rank, ...(c.visualCueEvidence ? { visualCueEvidence: c.visualCueEvidence } : {}) })),
         topCandidates: scored.candidates.slice(0, 5).map(c => ({ word: c.word, score: c.score, probability: c.probability })) });
       if (ETTIN_SHADOW_ENABLED) {
         const shadowOpportunity = HUMAN_PLAYTEST_TURN.opportunity;
@@ -2294,7 +2758,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         }
       }
       const proposalReasonsByWord = new Map(bounded.map(candidate => [normalizeAiCandidate(candidate.word), candidate.proposalReasons || []]));
-      return { status: 'ready', pool: { predictionMode: 'ettin-pilot', targetLength: targetSlot.length, targetSlot: { group: targetSlot.group, slotIndex: targetSlot.slotIndex, length: targetSlot.length },
+      return { status: 'ready', pool: { ...(visualCueExperiment ? { visualCueExperiment } : {}), predictionMode: 'ettin-pilot', targetLength: targetSlot.length, targetSlot: { group: targetSlot.group, slotIndex: targetSlot.slotIndex, length: targetSlot.length },
         candidates: scored.candidates.map(c => ({ ...c, proposalReasons: proposalReasonsByWord.get(normalizeAiCandidate(c.word)) || [], normalized: c.normalized || normalizeAiCandidate(c.word), publicBoardKey })),
         entityTypeContext: entityContext,
         entitySlotCompatibilityContext,
@@ -2400,6 +2864,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     countries: ['PLACE'], 'japan-places': ['PLACE'], 'foreign-cities': ['PLACE'], regions: ['PLACE'],
     landmarks: ['PLACE'], 'natural-geography': ['PLACE'],
     'companies-brands': ['BUSINESS'], 'stores-chains': ['BUSINESS', 'PLACE'],
+    'organizations-institutions': ['BUSINESS'],
   });
   const ENTITY_TYPE_INTERPERSONAL_PREDICATES = new Set(['love', 'like', 'know', 'meet', 'invite', 'help']);
 
@@ -3183,7 +3648,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const subjectContext = isEttinPilotMode()
       ? stage1SubjectContext(state, targetSlot)
       : { active: false, type: null, determinerHeaded: false };
-    const questionOpening = index === 0 && state.slots.some((slot, slotIndex) => slotIndex >= index && /\?/.test(slot.trailing || ''));
+    const questionOpening = globalThis.GGGHumanPlaytest.questionOpening(state, index);
     const previous = index > 0 && state.slots[index - 1]?.solved
       ? getHumanPlaytestAnalysis(globalThis.GGGHumanPlaytest.tokenAt(state.slots[index - 1])) : null;
     const previousRoles = new Set(previous?.roles || []);
@@ -3288,7 +3753,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const roles = new Set(candidate.analysis?.lexicalRoles || candidate.analysis?.roles || []);
     const ordinaryRole = ['noun', 'verb', 'baseVerb', 'finiteVerb', 'pastParticiple', 'presentParticiple',
       'adjective', 'adverb', 'article', 'determiner', 'pronoun', 'preposition', 'conjunction', 'auxiliary',
-      'questionWord', 'modal', 'negator', 'particle'].some(role => roles.has(role));
+      'questionWord', 'modal', 'negator', 'particle', 'possessiveDeterminer', 'possessivePronoun'].some(role => roles.has(role));
     const properRole = authorization.authorized;
     const nameOnlyRestricted = globalThis.vault4Dictionary.isRecognizedNameOnlyRestricted(candidate.word);
     const nameRecognized = authorization.authorized;
@@ -3336,6 +3801,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   function stage1CapitalizationState(state, targetSlotIndex, proper = globalThis.GGGHumanPlaytest.properContext(state)) {
     const slot = state.slots[targetSlotIndex];
     const visiblyCapitalized = Boolean(slot?.letters?.[0]?.capital && slot?.letters?.length > 1);
+    if (slot?.letters?.slice(1).some(letter => letter.capital)) return 'meaningfully-capitalized';
     if (!visiblyCapitalized) return 'lowercase';
     if (proper.sentenceInitial) return 'sentence-initial';
     return proper.active ? 'meaningfully-capitalized' : 'lowercase';
@@ -3364,7 +3830,8 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const capitalizationState = stage1CapitalizationState(publicState, targetSlotIndex, proper);
     const requiresProperNameAdmission = capitalizationState === 'meaningfully-capitalized';
     const publicEntity = Array.isArray(pool.publicEntityWords) && pool.publicEntityWords.includes(candidateWord);
-    const authorization = globalThis.GGGProperNounBank.resolveProperNounAuthorization(candidateWord, { publicEntity });
+    const contextualForms = globalThis.GGGProperNounBank.contextualForms(pool.targetSlot.length, publicState, targetSlotIndex);
+    const authorization = globalThis.GGGProperNounBank.resolveProperNounAuthorization(candidateWord, { publicEntity, contextualForms });
     if (nameOnlyRestricted && !policy.canAdmitNameOnlyCandidate(candidateWord, {
       recognizedName: authorization.authorized,
       targetPermitsName: capitalizationState !== 'lowercase',
@@ -3380,6 +3847,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       publicBoardKey: candidate.publicBoardKey };
     const resolveEntryAuthorization = entry => globalThis.GGGProperNounBank.resolveProperNounAuthorization(entry?.word, {
       publicEntity: Array.isArray(pool.publicEntityWords) && pool.publicEntityWords.includes(policy.normalize(entry?.word)),
+      contextualForms,
     });
     const properNameCandidateIsValid = entry => {
       const classes = entry?.lexicalClasses || (!isEttinPilotMode()
@@ -3454,9 +3922,13 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     // Explicit future public-entity input; no image system is connected.
     const entities = publicEntities.filter(e => e && ['public-text', 'image-description'].includes(e.source) && /^[A-Za-z]+$/.test(e.word));
     const names = new Set(entities.map(e => e.word.toLowerCase()));
-    const bankForms = stage1Proper.nameQueueAllowed ? globalThis.GGGProperNounBank.candidateForms(targetSlot.length) : [];
+    const contextualForms = stage1Proper.nameQueueAllowed
+      ? globalThis.GGGProperNounBank.contextualForms(targetSlot.length, state, targetSlot.slotIndex) : [];
+    const bankForms = stage1Proper.nameQueueAllowed
+      ? [...globalThis.GGGProperNounBank.candidateForms(targetSlot.length), ...contextualForms] : [];
     const resourceKey = targetSlot.length + ':' + capitalizationState + ':' +
-      globalThis.GGGProperNounBank.revision() + ':' + JSON.stringify(entities);
+      globalThis.GGGProperNounBank.revision() + ':' + JSON.stringify(entities) + ':' +
+      JSON.stringify(contextualForms.map(form => [form.word, form.entryId, form.title]));
     const universe = engine.cachedVocabulary(resourceKey, () => {
       const dictionaryWords = globalThis.getVault4Candidates({ usableLengths: [targetSlot.length],
         vault1Words: [], vault2Words: [], vault3Words: [], vault5Words: [], guessedWords: [], includeProperNames: stage1Proper.nameQueueAllowed });
@@ -3517,11 +3989,12 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         const word = candidate.word;
         const zipf = frequencies.get(word) ?? 2.5;
         const publicEntity = names.has(word) && candidate.sources.includes('public-entities');
-        const authorization = globalThis.GGGProperNounBank.resolveProperNounAuthorization(word, { publicEntity });
+        const authorization = globalThis.GGGProperNounBank.resolveProperNounAuthorization(word, { publicEntity, contextualForms });
         let lexicalClass = engine.lexicalClass(word, dictionary, zipf, publicEntity);
         if (!lexicalClass && stage1Proper.nameQueueAllowed && authorization.authorized) {
           lexicalClass = authorization.authorizationSource === 'proper-noun-bank' ? 'proper-noun-bank' :
-            authorization.authorizationSource === 'legacy-recognized-name' ? 'given-name' : 'public-entity';
+            authorization.authorizationSource === 'legacy-recognized-name' ? 'given-name' :
+              ['distinctive-dictionary-form', 'title-abbreviation'].includes(authorization.authorizationSource) ? 'proper-noun-bank' : 'public-entity';
         }
         if (!lexicalClass || (!stage1Proper.nameQueueAllowed && ['given-name','dictionary-capitalized'].includes(lexicalClass))) return null;
         if (isSituationPilotMode() && ['wanna','gonna','gotta'].includes(word)) return null;
@@ -3730,7 +4203,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         length: group.querySelectorAll(".letter-block").length,
         solved: group.classList.contains("revealed"),
         location: group.dataset.wordLocation || "",
-        ...(isHumanPlaytestMode() || isAiMaximumAccuracyMode() ? {} : { answer: getActualWord(group) }),
+        ...(usesPreparedAiRoute() || isAiMaximumAccuracyMode() ? {} : { answer: getActualWord(group) }),
       }))
       .filter((slot) => slot.length > 0 && !slot.solved);
   }
@@ -3765,7 +4238,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const eligibleSlots = getEligibleAiSlots();
     if (eligibleSlots.length === 0) return null;
     // Public-only provisional lock; Upgrade 1 compares all opportunities below.
-    if (isHumanPlaytestMode()) return eligibleSlots[0];
+    if (usesPreparedAiRoute()) return eligibleSlots[0];
     // The async maximum-mode path compares legal candidate distributions for
     // every slot. This provisional target only establishes the existing lock.
     if (isAiMaximumAccuracyMode()) return eligibleSlots[0];
@@ -3864,7 +4337,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
 
   function normalizeAiCandidate(word) {
     const value = String(word ?? "").trim();
-    return isHumanPlaytestMode() || isAiMaximumAccuracyMode() || aiLogicSettings?.rules?.noCaseMistakes ? value.toLocaleLowerCase() : value;
+    return usesPreparedAiRoute() || isAiMaximumAccuracyMode() || aiLogicSettings?.rules?.noCaseMistakes ? value.toLocaleLowerCase() : value;
   }
 
   function normalizeAiAnswer(word) {
@@ -3881,13 +4354,13 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   // The existing puzzle submission pipeline only safely renders plain alphabetic
   // words. Reject contractions during pool construction and again at submission.
   function isSafelySubmittableAiCandidate(word, targetLength) {
-    if (isHumanPlaytestMode()) return /^[A-Za-z]+(?:['’-][A-Za-z]+)*$/.test(String(word)) && globalThis.GGGHumanPlaytest.tokenLetters(word).length === targetLength;
+    if (usesPreparedAiRoute()) return /^[A-Za-z]+(?:['’-][A-Za-z]+)*$/.test(String(word)) && globalThis.GGGHumanPlaytest.tokenLetters(word).length === targetLength;
     if (!isUsableAiCandidate(word, targetLength)) return false;
     return /^[A-Za-z]+$/.test(String(word).trim());
   }
 
   function matchesAiRevealedLetters(word, targetSlot) {
-    if (isHumanPlaytestMode()) return globalThis.GGGHumanPlaytest.matchesToken(word, getHumanPlaytestPublicState(targetSlot).slots[targetSlot.slotIndex]);
+    if (usesPreparedAiRoute()) return globalThis.GGGHumanPlaytest.matchesToken(word, getHumanPlaytestPublicState(targetSlot).slots[targetSlot.slotIndex]);
     const letters = String(word).toLowerCase();
     return Array.from(targetSlot.group.querySelectorAll(".letter-block")).every((block, index) => (
       !isBlockRevealed(block) || letters[index] === block.textContent.toLowerCase()
@@ -3896,7 +4369,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
 
   function applyAiTargetCapitalization(word, targetSlot) {
     const displayWord = String(word ?? "").trim();
-    if ((!isHumanPlaytestMode() && !isAiMaximumAccuracyMode() && aiLogicSettings?.rules?.noCaseMistakes !== true) || !targetSlot?.group) {
+    if ((!usesPreparedAiRoute() && !isAiMaximumAccuracyMode() && aiLogicSettings?.rules?.noCaseMistakes !== true) || !targetSlot?.group) {
       return displayWord;
     }
 
@@ -3924,7 +4397,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   }
 
   async function buildAiCandidatePool(targetSlot) {
-    if (isHumanPlaytestMode()) return buildHumanPlaytestPool(targetSlot);
+    if (usesPreparedAiRoute()) return buildHumanPlaytestPool(targetSlot);
     if (!targetSlot) return null;
     const maximum = isAiMaximumAccuracyMode();
     const puzzleSource = maximum ? null : puzzleList[currentPuzzleIndex];
@@ -4552,7 +5025,8 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         contextualPriorBonus, entityTypeBonus, slotCompatibility, discoursePersonCompatibility);
       return { ...entry, matchedContextualReasons, contextualPriorBonus, entityMatch, entityTypeBonus,
         slotCompatibility, discoursePersonCompatibility, combinedSupport: combinedScore.combinedSupport,
-        effectiveScore: combinedScore.effectiveScore };
+        effectiveScore: combinedScore.effectiveScore + (pool.visualCueExperiment
+          ? Math.min(globalThis.GGGVisualCueExperiment.bonusCap(pool.visualCueExperiment), Math.max(0, entry.candidate.visualCueEvidence?.supportBonus || 0)) : 0) };
     }).sort((left, right) => right.effectiveScore - left.effectiveScore ||
       left.candidate.rank - right.candidate.rank || left.inputIndex - right.inputIndex);
 
@@ -4587,6 +5061,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const candidateDiagnostics = effectiveCandidates.map(entry => ({
       word: entry.candidate.word,
       matchedContextualReasons: entry.matchedContextualReasons,
+      ...(pool.visualCueExperiment ? { visualCueEvidence: entry.candidate.visualCueEvidence || null } : {}),
       rawEttinScore: entry.candidate.score,
       rawEttinProbability: entry.candidate.probability,
       rawEttinRank: entry.candidate.rank,
@@ -4685,7 +5160,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       if (pool) pool.stage3Distribution = distribution;
       return distribution.entries.map(entry => ({ ...entry, candidate: entry.candidate }));
     }
-    if (isHumanPlaytestMode()) return (rankHumanPlaytestPool(pool)?.band || []).map(e => ({
+    if (usesPreparedAiRoute()) return (rankHumanPlaytestPool(pool)?.band || []).map(e => ({
       candidate: e, grammarWeight: e.grammarWeight, weight: e.weight, probability: e.probability }));
     if (!pool?.candidates?.length) return [];
     const maximum = isAiMaximumAccuracyMode();
@@ -4731,7 +5206,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       const selectedCandidate = { ...selected.candidate, modelProbability: selected.modelProbability,
         selectionProbability: selected.selectionProbability, probability: selected.selectionProbability,
         publicBoardKey: pool.publicBoardKey,
-        diagnostic: { provider: 'ETTIN', policyVersion: 'ettin-stage3-top-k-v1', band: distribution.band,
+        diagnostic: { ...(pool.visualCueExperiment ? { visualCueExperiment: pool.visualCueExperiment, visualCueEvidence: selected.candidate.visualCueEvidence || null } : {}), provider: 'ETTIN', policyVersion: 'ettin-stage3-top-k-v1', band: distribution.band,
           requestedK: distribution.requestedK, groupSize: distribution.groupSize,
           contextualPriorVersion: selected.contextualPriorVersion,
           contextualPriorApplied: selected.contextualPriorApplied,
@@ -4754,7 +5229,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
             effectiveStage3Probability: entry.effectiveStage3Probability })) } };
       return selectedCandidate;
     }
-    if (isHumanPlaytestMode()) {
+    if (usesPreparedAiRoute()) {
       const ranking = rankHumanPlaytestPool(pool);
       if (!ranking) return null;
       if (pool.boardKey && pool.boardKey !== globalThis.GGGHumanPlaytest.boardKey(ranking.state)) return null;
@@ -4806,6 +5281,17 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     return best;
   }
 
+  function scheduleAiGuessCompletion(duration, character) {
+    if (aiCompletionTimer !== null) clearTimeout(aiCompletionTimer);
+    const owner = opportunityGeneration;
+    aiCompletionTimer = setTimeout(() => {
+      if (owner !== opportunityGeneration || recognizedResponder !== character ||
+          handRaiseState !== HAND_RAISE_STATES.ANSWER_LOCKED) return;
+      aiCompletionTimer = null;
+      finishAiGuessOpportunity();
+    }, duration);
+  }
+
   function finishAiGuessOpportunity() {
     if (handRaiseState !== HAND_RAISE_STATES.ANSWER_LOCKED || !AI_CHARACTERS.includes(recognizedResponder)) return false;
     resetHandRaiseState();
@@ -4828,11 +5314,12 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   function submitSelectedAiGuess() {
     const target = currentAiTargetSlot;
     const candidate = currentAiSelectedCandidate;
+    const assisted = candidate?.proposalSource === 'assistance';
     const character = recognizedResponder;
-    const submittedWord = isHumanPlaytestMode() && candidate?.submissionSurface
+    const submittedWord = usesPreparedAiRoute() && candidate?.submissionSurface
       ? candidate.submissionSurface
       : applyAiTargetCapitalization(candidate?.word, target);
-    if (isHumanPlaytestMode()) {
+    if (usesPreparedAiRoute()) {
       logHumanPlaytestTransition('submission-attempted');
       const problem = humanPlaytestCandidateProblem(currentAiCandidatePool, candidate);
       if (problem) {
@@ -4857,7 +5344,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         word: candidate?.word || "",
         targetSlot: target?.slotIndex,
       });
-      if (isHumanPlaytestMode()) {
+      if (usesPreparedAiRoute()) {
         logHumanPlaytestTransition('submission-rejected-before-commit', 'invalid-turn-or-token');
         return cancelHumanPlaytestOpportunity('invalid-turn-or-token');
       }
@@ -4865,8 +5352,12 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       return false;
     }
 
-    if (isHumanPlaytestMode()) {
-      if (isEttinPilotMode()) {
+    if (usesPreparedAiRoute()) {
+      if (assisted) {
+        emitDiagnosticEvent('ai-decision', { predictionMode: 'assistance', provider: 'assistance',
+          source: 'assistance', mechanism: candidate.assistanceMechanism,
+          targetSlot: target.slotIndex, targetLength: target.length, guessedWord: submittedWord });
+      } else if (isEttinPilotMode()) {
         const currentState = getHumanPlaytestPublicState(target);
         const currentKey = globalThis.GGGHumanPlaytest.boardKey(currentState);
         const valid = globalThis.GGGEttinProvider?.validateCandidate(buildEttinPublicSnapshot(currentState), submittedWord);
@@ -4876,7 +5367,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
           return cancelHumanPlaytestOpportunity(reason);
         }
         logEttinPilot('candidate-revalidated', target, { phase: 'before-submit', selectedGuess: candidate.word });
-        emitDiagnosticEvent('ai-decision', { predictionMode: 'ettin-pilot', provider: 'ETTIN', ...candidate.diagnostic,
+        emitDiagnosticEvent('ai-decision', { predictionMode: isHumanPlaytestMode() ? 'ettin-pilot' : 'ettin', provider: 'ETTIN', ...candidate.diagnostic,
           targetSlot: target.slotIndex, targetLength: target.length, guessedWord: submittedWord });
       } else {
         const ranking = rankHumanPlaytestPool(currentAiCandidatePool);
@@ -4901,16 +5392,17 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const blockPolicy = globalThis.vault4Dictionary;
     const blockPolicyProblem = blockPolicy.isAbsolutelyBlocked(submittedWord)
       ? 'absolute-block'
-      : isHumanPlaytestMode() && currentAiCandidatePool?.targetSlot?.group !== target?.group
+      : usesPreparedAiRoute() && currentAiCandidatePool?.targetSlot?.group !== target?.group
         ? 'target-mismatch'
+      : assisted ? assistanceCandidateProblem(currentAiCandidatePool, candidate)
       : stage1CandidateBlockPolicyProblem(
         candidate,
         currentAiCandidatePool,
-        isHumanPlaytestMode() ? getHumanPlaytestPublicState(target) : null,
+        usesPreparedAiRoute() ? getHumanPlaytestPublicState(target) : null,
         submittedWord,
       );
     if (blockPolicyProblem) {
-      if (isHumanPlaytestMode()) {
+      if (usesPreparedAiRoute()) {
         logHumanPlaytestTransition('submission-rejected-before-commit', blockPolicyProblem);
         return cancelHumanPlaytestOpportunity(blockPolicyProblem);
       }
@@ -4922,15 +5414,18 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     target.group.classList.add("selected");
     const aiAttempt = createAttempt(target.group, "ai");
     aiAttempt.aiGuessContext = { slotIndex: target.slotIndex, word: submittedWord };
-    aiAttempt.typedCharacters = isHumanPlaytestMode()
+    if (isEttinPilotMode()) Object.assign(aiAttempt.aiGuessContext, {
+      source: assisted ? 'assistance' : 'ettin', ...(assisted ? { mechanism: candidate.assistanceMechanism } : {}),
+    });
+    aiAttempt.typedCharacters = usesPreparedAiRoute()
       ? Array.from(submittedWord.replace(/[^A-Za-z]/g, '')).filter((_, i) => !isBlockRevealed(target.group.querySelectorAll('.letter-block')[i])).join('')
       : submittedWord;
     currentAttempt = aiAttempt;
     renderAttemptPreview(aiAttempt);
-    if (isEttinPilotMode()) logEttinPilot('guess-submitted', target, { submittedGuess: submittedWord,
+    if (isEttinPilotMode() && !assisted) logEttinPilot('guess-submitted', target, { submittedGuess: submittedWord,
       selectedScore: candidate.score, selectedModelProbability: candidate.modelProbability,
       selectedSelectionProbability: candidate.selectionProbability, selectedRank: candidate.diagnostic?.modelRank });
-    else logPilotCandidate('guess-submitted', candidate, target, { submittedGuess: submittedWord });
+    else if (!assisted) logPilotCandidate('guess-submitted', candidate, target, { submittedGuess: submittedWord });
     submitGuess(aiAttempt, submittedWord, { character });
     return true;
   }
@@ -4938,7 +5433,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   function hasWrongAiGuessForSlot(slotId, word) {
     const normalizedWord = normalizeAiCandidate(word);
     if (!normalizedWord) return false;
-    if (!isHumanPlaytestMode() && aiLogicSettings?.rules?.allowSameWordDifferentSlot === false) {
+    if (!usesPreparedAiRoute() && aiLogicSettings?.rules?.allowSameWordDifferentSlot === false) {
       return Array.from(wrongAiGuessesBySlot.values()).some((words) => words.has(normalizedWord));
     }
     return wrongAiGuessesBySlot.get(String(slotId))?.has(normalizedWord) || false;
@@ -4958,7 +5453,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   function clearAiWrongGuessMemory() {
     wrongAiGuessesBySlot.clear();
     resetEttinAttention();
-    if (isHumanPlaytestMode()) { globalThis.GGGHumanPlaytest?.reset(); getHumanCandidateProvider()?.reset(); HUMAN_PLAYTEST_TURN.publicClueTimes = new Map(); HUMAN_PLAYTEST_TURN.emptyBoardKey = null; }
+    if (usesPreparedAiRoute()) { globalThis.GGGHumanPlaytest?.reset(); getHumanCandidateProvider()?.reset(); HUMAN_PLAYTEST_TURN.publicClueTimes = new Map(); HUMAN_PLAYTEST_TURN.emptyBoardKey = null; }
   }
 
   function clearRaisedAiHand() {
@@ -4973,7 +5468,11 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   }
 
   function resetHandRaiseState() {
-    if (isHumanPlaytestMode()) { HUMAN_PLAYTEST_TURN.generation++; HUMAN_PLAYTEST_TURN.prepared = null; }
+    opportunityGeneration++;
+    if (aiCompletionTimer !== null) clearTimeout(aiCompletionTimer);
+    aiCompletionTimer = null;
+    cancelWrongFeedback();
+    if (usesPreparedAiRoute()) { HUMAN_PLAYTEST_TURN.generation++; HUMAN_PLAYTEST_TURN.prepared = null; }
     clearRaisedAiHand();
     humanHandRaised = false;
     recognizedResponder = null;
@@ -4988,7 +5487,8 @@ const puzzleImageEl = document.getElementById("puzzleImage");
 
   async function recognizeAiResponder(character) {
     if (handRaiseState !== HAND_RAISE_STATES.AI_HAND_PENDING || raisedHandCharacter !== character) return false;
-    if (isHumanPlaytestMode()) return recognizePreparedHumanPlaytestResponder(character);
+    if (usesPreparedAiRoute()) return recognizePreparedHumanPlaytestResponder(character);
+    const owner = opportunityGeneration;
     clearRaisedAiHand();
     recognizedResponder = character;
     emitDiagnosticEvent("teacher-recognition", { responder: character });
@@ -5008,9 +5508,9 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     updateHumanRaiseHandButton();
     console.debug("AI TARGET SLOT:", currentAiTargetSlot.slotIndex, "Length", currentAiTargetSlot.length);
     try {
-      const builtPool = isHumanPlaytestMode() ? await buildHumanPlaytestTurnPool(currentAiTargetSlot) : isAiMaximumAccuracyMode()
+      const builtPool = usesPreparedAiRoute() ? await buildHumanPlaytestTurnPool(currentAiTargetSlot) : isAiMaximumAccuracyMode()
         ? await buildMaximumAccuracyAiPool() : await buildAiCandidatePool(currentAiTargetSlot);
-      if (handRaiseState === HAND_RAISE_STATES.ANSWER_LOCKED && recognizedResponder === character) {
+      if (owner === opportunityGeneration && handRaiseState === HAND_RAISE_STATES.ANSWER_LOCKED && recognizedResponder === character) {
         currentAiCandidatePool = builtPool;
         if (builtPool) currentAiTargetSlot = builtPool.targetSlot;
         console.debug("AI CANDIDATE POOL BUILT:", {
@@ -5025,7 +5525,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
             console.debug("AI CANDIDATE SELECTION SKIPPED: no valid chance or candidate.");
             resolveCurrentAnswerForTesting();
           } else {
-            if (isHumanPlaytestMode()) {
+            if (usesPreparedAiRoute()) {
               submitSelectedAiGuess();
               return true;
             }
@@ -5074,14 +5574,14 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       }
     } catch (error) {
       console.error("AI candidate pool could not be built.", error);
-      resolveCurrentAnswerForTesting();
+      if (owner === opportunityGeneration) resolveCurrentAnswerForTesting();
     }
     return true;
   }
 
   function raiseAiHand(character) {
     if (!gameStarted || raisedHandCharacter || handRaiseState !== HAND_RAISE_STATES.OPEN || humanHandRaised) return false;
-    if (isHumanPlaytestMode()) {
+    if (usesPreparedAiRoute()) {
       const prepared = HUMAN_PLAYTEST_TURN.prepared;
       const problem = !prepared || prepared.character !== character ? 'no-valid-slot' : humanPlaytestCandidateProblem(prepared.pool, prepared.candidate);
       if (problem) return cancelHumanPlaytestOpportunity(problem);
@@ -5090,24 +5590,31 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     if (!indicator) return false;
     clearRaisedAiHand();
     raisedHandCharacter = character;
-    emitDiagnosticEvent("ai-hand-raised", { character, guessNumber: aiGuessNumber });
+    emitDiagnosticEvent("ai-hand-raised", { character, guessNumber: aiGuessNumber, gameplaySpeed: turnTiming.setting });
     handRaiseState = HAND_RAISE_STATES.AI_HAND_PENDING;
-    if (isHumanPlaytestMode()) logHumanPlaytestTransition('hand-raised');
+    if (usesPreparedAiRoute()) logHumanPlaytestTransition('hand-raised');
     indicator.hidden = false;
     indicator.classList.add("visible");
     indicator.setAttribute("aria-hidden", "false");
-    recognitionTimer = setTimeout(() => { void recognizeAiResponder(character); }, humanPlaytestDelay(750));
+    const recognitionOwner = recognitionGeneration;
+    const opportunityOwner = opportunityGeneration;
+    recognitionTimer = setTimeout(() => {
+      if (recognitionOwner !== recognitionGeneration || opportunityOwner !== opportunityGeneration) return;
+      recognitionTimer = null;
+      void recognizeAiResponder(character);
+    }, turnTiming.duration(humanPlaytestDelay(750), "recognition"));
     return true;
   }
 
   function raiseHumanHand() {
     if (!gameStarted || isGameOver || gameEnded || handRaiseState === HAND_RAISE_STATES.ANSWER_LOCKED) return false;
     if (handRaiseState === HAND_RAISE_STATES.AI_HAND_PENDING) {
-      if (isHumanPlaytestMode()) { logHumanPlaytestTransition('opportunity-cancelled', 'human-interrupted'); resetHandRaiseState(); }
+      if (usesPreparedAiRoute()) { logHumanPlaytestTransition('opportunity-cancelled', 'human-interrupted'); resetHandRaiseState(); }
       else clearRaisedAiHand();
     }
     if (handRaiseState !== HAND_RAISE_STATES.OPEN) return false;
-    if (isHumanPlaytestMode()) { HUMAN_PLAYTEST_TURN.generation++; HUMAN_PLAYTEST_TURN.prepared = null; }
+    if (usesPreparedAiRoute()) { HUMAN_PLAYTEST_TURN.generation++; HUMAN_PLAYTEST_TURN.prepared = null; }
+    turnTiming = gameplaySpeed.snapshot();
     humanHandRaised = true;
     emitDiagnosticEvent("human-hand-raised", { guessNumber: aiGuessNumber });
     recognizedResponder = "human";
@@ -5271,15 +5778,17 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     aiGuessNumber = 1;
     aiTurnState = "idle";
     gameStarted = true;
+    startAssistanceGame();
     emitDiagnosticEvent("start", {
       ...(isHumanPlaytestMode() ? { predictionMode: 'human-playtest' } : {}),
       puzzleNumber: typeof puzzleList[currentPuzzleIndex] === "string"
         ? Number(String(puzzleList[currentPuzzleIndex]).match(/puzzle-(\d+)/)?.[1] || currentPuzzleIndex + 1)
         : Number(puzzleList[currentPuzzleIndex]?.number || currentPuzzleIndex + 1),
       ...(isHumanPlaytestMode() ? {} : { puzzleText: currentPuzzleText }),
-      modeFlags: { humanPlaytestMode: isHumanPlaytestMode(), ettinPilot: isEttinPilotMode(), situationPilot: isSituationPilotMode() },
-      runtimeMode: isEttinPilotMode() ? 'ettin-pilot' : isHumanPlaytestMode() ? 'human-playtest' : 'normal',
+      modeFlags: { humanPlaytestMode: isHumanPlaytestMode(), ettinPilot: isEttinPilotMode(), situationPilot: isSituationPilotMode(), ...(globalThis.GGGVisualCueExperiment?.enabled ? { visualCueExperiment: globalThis.GGGVisualCueExperiment.metadata() } : {}) },
+      runtimeMode: isEttinPilotMode() ? (isHumanPlaytestMode() ? 'ettin-pilot' : 'ettin') : isHumanPlaytestMode() ? 'human-playtest' : 'normal',
       puzzleIdentity: { index: currentPuzzleIndex, number: typeof puzzleList[currentPuzzleIndex] === "string" ? Number(String(puzzleList[currentPuzzleIndex]).match(/puzzle-(\d+)/)?.[1] || currentPuzzleIndex + 1) : Number(puzzleList[currentPuzzleIndex]?.number || currentPuzzleIndex + 1), source: typeof puzzleList[currentPuzzleIndex] === "string" ? puzzleList[currentPuzzleIndex] : 'inline-puzzle-list', custom: typeof puzzleList[currentPuzzleIndex] !== 'string' && Boolean(puzzleList[currentPuzzleIndex]?.custom || puzzleList[currentPuzzleIndex]?.source === 'custom') },
+      gameplaySpeed: gameplaySpeed.get(),
       settings: typeof structuredClone === "function" ? structuredClone(aiLogicSettings) : aiLogicSettings,
       runtime: loadedRuntime,
     });
@@ -5312,11 +5821,15 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const range = chooseAiTimingRange(ranges);
     if (!range) return;
     const delaySeconds = range.minSeconds + Math.floor(Math.random() * (range.maxSeconds - range.minSeconds + 1));
+    turnTiming = gameplaySpeed.snapshot();
+    const scheduleOwner = aiScheduleGeneration;
+    const opportunityOwner = opportunityGeneration;
     aiTurnState = "waiting";
     aiTurnTimer = setTimeout(() => {
+      if (scheduleOwner !== aiScheduleGeneration || opportunityOwner !== opportunityGeneration) return;
       aiTurnTimer = null;
       runAutomaticStudentTurn();
-    }, gameplayPacingDelay(delaySeconds * 1000));
+    }, turnTiming.duration(gameplayPacingDelay(delaySeconds * 1000), "pacing"));
   }
 
   function runAutomaticStudentTurn() {
@@ -5326,7 +5839,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     }
     aiTurnState = "executing";
     const character = AI_CHARACTERS[Math.floor(Math.random() * AI_CHARACTERS.length)];
-    if (isHumanPlaytestMode()) { void prepareHumanPlaytestOpportunity(character); return; }
+    if (usesPreparedAiRoute()) { void prepareHumanPlaytestOpportunity(character); return; }
     if (!raiseAiHand(character)) {
       aiTurnState = "stopped";
       return;
@@ -5624,6 +6137,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
   function removeFeedbackInputBlocker(feedback) {
     document.removeEventListener("keydown", feedback.blockKeydown, true);
     document.removeEventListener("keyup", feedback.releaseKeyup, true);
+    feedback.pressedGameplayKeys.clear();
   }
 
   function clearWrongSnapshot(feedback) {
@@ -5637,13 +6151,18 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     if (!wrongFeedback) return;
     const feedback = wrongFeedback;
     clearTimeout(feedback.timer);
+    removeFeedbackInputBlocker(feedback);
     clearWrongSnapshot(feedback);
     wrongFeedback = null;
     feedback.animationFinished = true;
     finishPendingHintDisplay('game-or-puzzle-ended');
   }
 
-  function showWrongGuessFeedback(attempt, answeringCharacter = "") {
+  function showWrongGuessFeedback(attempt, answeringCharacter = "", resolvedDuration = null) {
+    cancelWrongFeedback();
+    const displayDuration = resolvedDuration ?? turnTiming.duration(
+      answeringCharacter === "human" ? WRONG_GUESS_DISPLAY_MS : humanPlaytestIncorrectGuessDisplayDelay(), "feedback");
+    const owner = opportunityGeneration;
     const feedback = {
       group: attempt.group,
       selectionSource: attempt.selectionSource,
@@ -5652,8 +6171,8 @@ const puzzleImageEl = document.getElementById("puzzleImage");
       blocks: getHiddenBlocks(attempt.group),
       temporaryPreviewBlocks: getHiddenBlocks(attempt.group),
       timer: null,
-      displayDuration: answeringCharacter === "human" ? WRONG_GUESS_DISPLAY_MS : humanPlaytestIncorrectGuessDisplayDelay(),
-      endsAt: performance.now() + (answeringCharacter === "human" ? WRONG_GUESS_DISPLAY_MS : humanPlaytestIncorrectGuessDisplayDelay()),
+      displayDuration,
+      endsAt: performance.now() + displayDuration,
       animationFinished: false,
       pressedGameplayKeys: new Set(),
       blockKeydown: null,
@@ -5720,7 +6239,9 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     setMessage("Wrong.");
 
     feedback.timer = setTimeout(() => {
-      if (wrongFeedback !== feedback) return;
+      // This interaction no longer owns input, including stale timer callbacks.
+      removeFeedbackInputBlocker(feedback);
+      if (wrongFeedback !== feedback || owner !== opportunityGeneration) return;
       clearWrongSnapshot(feedback);
       wrongFeedback = null;
       feedback.animationFinished = true;
@@ -5778,7 +6299,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     const submittedToken = (rawGuess || "").trim();
     // The legacy renderer scores letter blocks. Validate the complete public
     // token first, then adapt its letters to that renderer only in playtest AI.
-    const playtestAiToken = isHumanPlaytestMode() && character !== 'human';
+    const playtestAiToken = usesPreparedAiRoute() && character !== 'human';
     if (playtestAiToken) {
       const slotIndex = Array.from(document.querySelectorAll('.word-group')).indexOf(group);
       const slot = getHumanPlaytestPublicState({ slotIndex }).slots[slotIndex];
@@ -5794,6 +6315,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     }
     const actual = getActualWord(group);
     const blocks = Array.from(group.querySelectorAll(".letter-block"));
+    const assistancePronounsEligible = ASSISTANCE.controller?.enabled ? hasAssistancePronouns() : false;
     const diagnosticBefore = {
       targetSlot: Array.from(document.querySelectorAll(".word-group")).indexOf(group),
       targetLength: blocks.length,
@@ -5803,8 +6325,11 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     };
     const recordDiagnosticGuess = (result, points, revealedAfter) => {
       if (isSituationPilotMode()) logPilotCandidate('guess-result', character === 'human' ? null : currentAiSelectedCandidate, { slotIndex: diagnosticBefore.targetSlot }, { correctnessAfterSubmission: result, actor: character, isAi: character !== 'human' });
+      const firstCommit = !attempt.committedResult;
       const hintDiagnostics = applyCommittedHintResult(attempt, result);
-      if (isEttinPilotMode() && character !== 'human') noteEttinAttentionCommit(diagnosticBefore.targetSlot, result);
+      if (firstCommit) observeAssistanceResult(attempt, result, character, diagnosticBefore.targetSlot, submittedToken, assistancePronounsEligible);
+      if (isEttinPilotMode() && character !== 'human' && attempt.aiGuessContext?.source !== 'assistance')
+        noteEttinAttentionCommit(diagnosticBefore.targetSlot, result);
       if (playtestAiToken) logHumanPlaytestTransition("guess-committed");
       emitDiagnosticEvent("guess", {
       ...diagnosticBefore, ...hintDiagnostics, guessedWord: playtestAiToken ? submittedToken : guess, responder: character, isAi: character !== "human", result, points, revealedAfter,
@@ -5845,12 +6370,14 @@ const puzzleImageEl = document.getElementById("puzzleImage");
 
     // ---------- CORRECT ----------
     if (guess === actual) {
+      const displayDuration = turnTiming.duration(character === "human" ? 2000 : humanPlaytestGuessDisplayDelay(), "speech");
       emitStudentEvent("ggg:student-guess", {
         character,
         guess: playtestAiToken ? submittedToken : guess,
         location: group.dataset.wordLocation,
         result: "correct",
-        displayDuration: character === "human" ? 2000 : humanPlaytestGuessDisplayDelay(),
+        displayDuration,
+        speedSetting: turnTiming.setting,
       });
       clearPreview(group);
 
@@ -5880,7 +6407,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         emitDiagnosticEvent("complete", { scores: { ...playerScores, human: score }, winner: getWinnerResultMessage() });
         endGame();
       } else if (character !== "human" && handRaiseState === HAND_RAISE_STATES.ANSWER_LOCKED) {
-        setTimeout(() => finishAiGuessOpportunity(), humanPlaytestGuessDisplayDelay());
+        scheduleAiGuessCompletion(displayDuration, character);
       } else if (character === "human" && handRaiseState === HAND_RAISE_STATES.ANSWER_LOCKED) {
         finishHumanGuessOpportunity();
       }
@@ -5888,14 +6415,16 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     }
 
     // ---------- WRONG (VALID) ----------
+    const feedbackDuration = turnTiming.duration(character === "human" ? WRONG_GUESS_DISPLAY_MS : humanPlaytestIncorrectGuessDisplayDelay(), "feedback");
     emitStudentEvent("ggg:student-guess", {
       character,
       guess: playtestAiToken ? submittedToken : guess,
       location: group.dataset.wordLocation,
       result: "incorrect",
-      displayDuration: character === "human" ? 2000 : humanPlaytestIncorrectGuessDisplayDelay(),
+      displayDuration: character === "human" ? turnTiming.duration(2000, "speech") : feedbackDuration,
+      speedSetting: turnTiming.setting,
     });
-    if (isHumanPlaytestMode()) {
+    if (usesPreparedAiRoute()) {
       const slot = getHumanPlaytestPublicState({ slotIndex: diagnosticBefore.targetSlot }).slots[diagnosticBefore.targetSlot];
       recordWrongAiGuessForSlot(diagnosticBefore.targetSlot, playtestAiToken ? submittedToken : globalThis.GGGHumanPlaytest.tokenAt(slot, guess));
     } else if (
@@ -5907,7 +6436,7 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     }
     // Capture the submitted preview before a hint changes public letters.
     // Hint completion is synchronous; the display timer owns only cleanup.
-    showWrongGuessFeedback(attempt, character);
+    showWrongGuessFeedback(attempt, character, feedbackDuration);
     recordDiagnosticGuess("incorrect", 0, blocks.map((block) => isBlockRevealed(block) ? block.textContent : ""));
   }
 
@@ -5941,12 +6470,16 @@ const puzzleImageEl = document.getElementById("puzzleImage");
         const allGroups = document.querySelectorAll('.word-group');
         hintRevealCount++;
         const hint = Hints.evaluate({ allGroups, hintRevealCount });
-        const block = hint?.action === 'revealOne' && allGroups[hint.groupIndex]?.querySelectorAll('.letter-block')[hint.letterIndex];
-        if (block && !isBlockRevealed(block)) {
-          diagnostic.hintLocation = { slot: hint.groupIndex, letterIndex: hint.letterIndex };
+        const selections = hint?.action === 'revealMany' ? hint.letters.map(letter => ({
+          block: allGroups[letter.groupIndex]?.querySelectorAll('.letter-block')[letter.letterIndex],
+          location: { slot: letter.groupIndex, letterIndex: letter.letterIndex },
+        })).filter(selection => selection.block && !isBlockRevealed(selection.block)) : [];
+        if (selections.length) {
+          diagnostic.hintLocations = selections.map(selection => selection.location);
+          diagnostic.hintLocation = diagnostic.hintLocations[0];
           diagnostic.hintId = ++HINT_DISPLAY.sequence;
           diagnostic.hintPendingDisplay = true;
-          HINT_DISPLAY.pending = { block, diagnostic };
+          HINT_DISPLAY.pending = { selections, diagnostic };
           // Real guesses have an observation preview. Tests/non-preview callers
           // may apply immediately; neither path advances the counter here.
           if (typeof wrongFeedback === 'undefined' || !wrongFeedback) finishPendingHintDisplay();
@@ -5964,30 +6497,34 @@ const puzzleImageEl = document.getElementById("puzzleImage");
     if (!pending) return false;
     if (!cancelReason && typeof wrongFeedback !== 'undefined' && wrongFeedback) return false;
     HINT_DISPLAY.pending = null; // release once, before publishing diagnostics
-    const { block, diagnostic } = pending;
+    const { selections, diagnostic } = pending;
+    const block = selections[0].block;
     const hintSlotIndex = diagnostic.hintLocation?.slot;
     const hintTarget = hintSlotIndex == null ? null : { slotIndex: hintSlotIndex };
     const beforeState = hintTarget ? getHumanPlaytestPublicState(hintTarget) : null;
     const boardKeyBefore = beforeState ? globalThis.GGGHumanPlaytest.boardKey(beforeState) : null;
     diagnostic.hintPendingDisplay = false;
-    if (cancelReason || block.isConnected === false) {
+    if (cancelReason || selections.some(selection => selection.block.isConnected === false)) {
       emitDiagnosticEvent('hint-display', { hintId: diagnostic.hintId, hintVisible: false, reason: cancelReason || 'stale-puzzle' });
       return false;
     }
     // The wrong snapshot and temporary text have both been cleared first.
-    revealBlock(block);
+    selections.forEach(selection => revealBlock(selection.block));
     diagnostic.hintCompleted = true;
     updateAllPartialUnderlines();
     const afterState = hintTarget ? getHumanPlaytestPublicState(hintTarget) : null;
     const boardKeyAfter = afterState ? globalThis.GGGHumanPlaytest.boardKey(afterState) : null;
     emitDiagnosticEvent('hint-display', { hintId: diagnostic.hintId, wrongPreviewCleared: true,
       hintVisible: true, hintCompleted: true, hintLocation: diagnostic.hintLocation, revealedLetter: block.textContent || null,
+      hintLocations: diagnostic.hintLocations, revealedLetters: selections.map(selection => selection.block.textContent),
       revealedPosition: diagnostic.hintLocation?.letterIndex ?? null, opportunity: HUMAN_PLAYTEST_TURN.opportunity,
       boardKeyBefore, boardKeyAfter });
-    if (isEttinPilotMode()) logEttinPilot('ettin-public-change', { slotIndex: diagnostic.hintLocation.slot,
-      length: block.closest('.word-group').querySelectorAll('.letter-block').length }, { cause: 'hint', hintId: diagnostic.hintId,
-      hintLocation: diagnostic.hintLocation, revealedLetter: block.textContent || null, revealedPosition: diagnostic.hintLocation?.letterIndex ?? null,
-      boardKeyBefore, boardKeyAfter, opportunity: HUMAN_PLAYTEST_TURN.opportunity });
+    if (isEttinPilotMode()) selections.forEach(({ block, location }) => {
+      logEttinPilot('ettin-public-change', { slotIndex: location.slot,
+        length: block.closest('.word-group').querySelectorAll('.letter-block').length }, { cause: 'hint', hintId: diagnostic.hintId,
+        hintLocation: location, revealedLetter: block.textContent || null, revealedPosition: location.letterIndex,
+        boardKeyBefore, boardKeyAfter, opportunity: HUMAN_PLAYTEST_TURN.opportunity });
+    });
     return true;
   }
 
@@ -6000,6 +6537,7 @@ if (holdImageBtn && imageOverlay) {
     holdImageBtn.setPointerCapture(e.pointerId);
     imageOverlay.style.display = "flex";
     imageOverlay.setAttribute("aria-hidden", "false");
+    noteAssistancePictureOpened();
   });
 
   const hideOverlay = () => {
@@ -6092,7 +6630,8 @@ if (holdImageBtn && imageOverlay) {
   });
 
   // ---------- RENDER ----------
-  function renderPuzzle(text) {
+  function renderPuzzle(text, assistanceMetadata = null) {
+    resetAssistanceRound(assistanceMetadata);
     cancelAiTurn();
     resetHandRaiseState();
     clearAiWrongGuessMemory();
@@ -6272,7 +6811,8 @@ if (/^[A-Za-z]+:$/.test(word)) {
   // ---------- INIT ----------
   async function init() {
     await loadPuzzleList();
-    loadNextPuzzle();
+    globalThis.GGGVisualCueExperiment?.mount(() => loadPuzzleAtIndex(currentPuzzleIndex));
+    await loadNextPuzzle();
   }
 
   init();

@@ -77,7 +77,7 @@ h1 {
 
 .ai-hand-indicator.visible {
   display: block;
-  animation: ai-hand-pulse 1.8s ease-in-out infinite;
+  animation: ai-hand-pulse var(--gameplay-hand-duration, 1.8s) ease-in-out infinite;
 }
 
 @keyframes ai-hand-pulse {
@@ -349,7 +349,7 @@ h1 {
 }
 
 .word-group.wrong-guess {
-  animation: wrong-guess-flash 250ms ease-in-out infinite alternate;
+  animation: wrong-guess-flash var(--gameplay-wrong-duration, 250ms) ease-in-out infinite alternate;
 }
 
 .word-group.wrong-guess .letter-block[data-wrong-snapshot-letter]::before {
@@ -413,7 +413,7 @@ h1 {
 }
 
 .letter-block.capitalization-error {
-  animation: capitalization-error-breathe var(--capitalization-breathe-duration) ease-in-out infinite;
+  animation: capitalization-error-breathe var(--gameplay-capitalization-duration, var(--capitalization-breathe-duration)) ease-in-out infinite;
 }
 
 .letter-block.capitalization-editable {
@@ -1003,3 +1003,34 @@ body.admin-open #playerButtonRow {
     bottom: -6px;
   }
 }
+
+.gameplay-speed-form { display: grid; gap: 0.8rem; max-width: 32rem; margin: 1rem auto; }
+.gameplay-speed-form input[type="range"] { width: 100%; }
+.gameplay-speed-form p { margin: 0; }
+.assistance-settings-form { display: grid; gap: 14px; max-width: 620px; margin: 18px auto; text-align: left; }
+.assistance-settings-form fieldset { border: 1px solid #aaa; border-radius: 6px; min-width: 0; }
+.assistance-settings-form p, .assistance-words p { font-size: 14px; line-height: 1.4; }
+.assistance-settings-form input[type="number"] { width: 5em; padding: 6px; font: inherit; }
+.assistance-interval { display: grid; grid-template-columns: minmax(130px, 1fr) auto auto; align-items: center; gap: 12px; margin: 12px 0; }
+.assistance-interval label { display: grid; gap: 4px; }
+.assistance-words { border: 1px solid #aaa; border-radius: 6px; padding: 12px; }
+.assistance-words summary { cursor: pointer; font-weight: bold; }
+#assistanceWordRows { border: 0; padding: 0; margin: 0; min-width: 0; }
+.assistance-word-row { display: grid; grid-template-columns: minmax(90px, 1fr) 2fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #ddd; }
+.assistance-word-row textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 6px; }
+@media (max-width: 540px) {
+  .assistance-interval > span { grid-column: 1 / -1; }
+  .assistance-interval { grid-template-columns: 1fr 1fr; }
+  .assistance-word-row { grid-template-columns: 1fr auto; }
+  .assistance-word-row textarea { grid-column: 1 / -1; grid-row: 2; }
+}
+.max-testing-speed { border: 2px solid #765214; padding: 0.8rem; background: #fff2d4; color: #392600; }
+.max-testing-speed small { display: block; margin-top: 0.35rem; }
+
+/* Reversible Puzzle 12 trial; absent from ordinary gameplay. */
+#visualCueExperiment { margin: 8px auto 16px; padding: 12px 18px; max-width: 760px; border: 1px solid #b8c8d8; border-radius: 10px; background: #f2f7fc; text-align: center; }
+#visualCueExperiment p { margin: 7px 0; }
+#visualCueExperiment select, #visualCueExperiment button { font: inherit; padding: 6px 10px; margin: 3px; }
+#visualCueExperiment a { margin-left: 8px; color: #174e82; }
+#visualCueExperiment .visual-cue-help { font-size: 14px; color: #455568; }
+#puzzleNavigation[hidden] { display: none; }

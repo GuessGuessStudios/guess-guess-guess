@@ -115,10 +115,13 @@
       const plural=/[^aeiou]y$/.test(lemma)?lemma.slice(0,-1)+'ies':lemma+(/(s|x|ch|sh)$/.test(lemma)?'es':'s');
       if(word===plural){roles.add('noun');lemmas.add(lemma);pluralNoun=true;primaryNoun ||= language.pos[lemma].startsWith('N');}
     }
+    // Moby codes concatenate case-sensitive readings: V is verb (often a
+    // participle), t/i are transitive/intransitive verbs; lowercase v is adverb.
+    if(/[Vti]/.test(codes))roles.add('verb');
+    if(/[ti]/.test(codes))roles.add('baseVerb');
     // Only generate morphology from an independently attested verb lemma.
-    if(/[ti]/.test(codes)){roles.add('verb');roles.add('baseVerb');}
     for(const lemma of [word.replace(/ies$/,'y'),word.replace(/es$/,''),word.replace(/s$/,''),word.replace(/ed$/,''),word.replace(/d$/,''),word.replace(/ing$/,''),word.replace(/ing$/,'e')]) {
-      if(lemma===word||!/[ti]/.test(language.pos[lemma]||''))continue;
+      if(lemma===word||!/[Vti]/.test(language.pos[lemma]||''))continue;
       const third=/[^aeiou]y$/.test(lemma)?lemma.slice(0,-1)+'ies':lemma+(/(s|x|z|ch|sh|o)$/.test(lemma)?'es':'s');
       const past=lemma.endsWith('e')?lemma+'d':/[^aeiou]y$/.test(lemma)?lemma.slice(0,-1)+'ied':lemma+'ed';
       const ing=lemma.replace(/e$/,'')+'ing';
@@ -193,13 +196,18 @@
     while(end<state.slots.length-1&&!/[.!?]/.test(state.slots[end].trailing))end++;
     return {start,end,question:/\?/.test(state.slots[end].trailing)};
   }
+  function questionOpening(state,targetSlotIndex=state?.targetSlotIndex) {
+    if(!state||!Array.isArray(state.slots)||!Number.isInteger(targetSlotIndex)||!state.slots[targetSlotIndex])return false;
+    return sentence({...state,targetSlotIndex}).question;
+  }
   function properContext(state) {
     const i=state.targetSlotIndex,slot=state.slots[i],span=sentence(state);
     const capital=slot.letters[0]?.capital&&slot.letters.length>1;
     // Initial capitalization is orthographic sentence syntax, not public
-    // evidence that the slot contains a name. Name routing starts only when a
-    // capitalized slot is elsewhere in the sentence.
-    const genuine=Boolean(capital&&i!==span.start);
+    // evidence that the slot contains a name. Internal capitalization or a
+    // capitalized slot elsewhere in the sentence provides stronger evidence.
+    const internalCapital=slot.letters.slice(1).some(letter=>letter.capital);
+    const genuine=Boolean(internalCapital||(capital&&i!==span.start));
     return {active:genuine,strong:genuine,sentenceInitial:i===span.start};
   }
   function retrieve(vocabulary,slot,rejected,key) {
@@ -621,6 +629,6 @@
   function reset(){attention.clear();rankingCache.clear();}
   // Future discourse/image evidence has an explicit public adapter boundary.
   // No discourse provider, image provider, or personality policy is connected.
-  global.GGGHumanPlaytest=Object.freeze({POLICY,frameGroups,framePrepositions,subjectNumber,semanticClasses,loadResources,nameFamiliarity,nameSourceMembership,extraWords,lexicalClass,tokenLetters,tokenAt,matchesToken,matchesCasePattern,surfaceForSlot,enrichAnalysis,properContext,construction,contextual,timeDeterminer:word=>timeDeterminers.has(normalize(word)),rank,choose,opportunity,noteAttempt,
+  global.GGGHumanPlaytest=Object.freeze({POLICY,frameGroups,framePrepositions,subjectNumber,semanticClasses,loadResources,nameFamiliarity,nameSourceMembership,extraWords,lexicalClass,tokenLetters,tokenAt,matchesToken,matchesCasePattern,surfaceForSlot,enrichAnalysis,properContext,construction,contextual,questionOpening,timeDeterminer:word=>timeDeterminers.has(normalize(word)),rank,choose,opportunity,noteAttempt,
     chooseSlot,cachedVocabulary,retrieve,cachedRank,boardKey,boardId,evidenceKey,reset});
 })(globalThis);

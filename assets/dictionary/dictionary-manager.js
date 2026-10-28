@@ -19,6 +19,7 @@
       this.wordsByLength = new Map();
       this.properWordsByLength = new Map();
       this.properWords = new Set();
+      this.distinctiveProperWords = new Set();
       this.ready = false;
     }
 
@@ -41,14 +42,16 @@
       const wordsByLength = new Map();
       const properWordsByLength = new Map();
       const properWords = new Set();
+      const distinctiveProperWords = new Set();
 
       String(text).split(/\r?\n/).forEach((entry) => {
         const rawEntry = String(entry ?? "").trim();
         const word = this.normalize(rawEntry);
-        // Keep the source's title-case lexical entries separately. Normal
+        // Keep the source's capitalized lexical surfaces separately. Normal
         // dictionary acceptance/fallback remains lowercase-only as before.
-        if (/^[A-Z][a-z]+$/.test(rawEntry) && !properWords.has(word)) {
+        if (/^[A-Za-z]+$/.test(rawEntry) && rawEntry !== rawEntry.toLowerCase()) {
           properWords.add(word);
+          if (/[A-Z]/.test(rawEntry.slice(1))) distinctiveProperWords.add(word);
           if (!properWordsByLength.has(word.length)) properWordsByLength.set(word.length, []);
           properWordsByLength.get(word.length).push(rawEntry);
         }
@@ -69,6 +72,7 @@
       properWordsByLength.forEach(words => Object.freeze(words));
       this.properWordsByLength = properWordsByLength;
       this.properWords = properWords;
+      this.distinctiveProperWords = distinctiveProperWords;
       this.ready = true;
       return this;
     }
@@ -92,6 +96,11 @@
     isProperWord(word) {
       this.requireReady();
       return this.properWords.has(this.normalize(word));
+    }
+
+    isDistinctiveProperWord(word) {
+      this.requireReady();
+      return this.distinctiveProperWords.has(this.normalize(word));
     }
 
     getStats() {

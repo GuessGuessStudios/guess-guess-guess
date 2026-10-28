@@ -16,7 +16,9 @@
       window.GGGGameplayLogger?.observe('guess-displayed', { actor: character, isAi: character !== 'human', displayedGuess: element.textContent });
     }
     let speechTimer;
+    let speechGeneration = 0;
     function hideSpeech() {
+      speechGeneration++;
       clearTimeout(speechTimer);
       Object.values(speech).forEach((bubble) => {
         bubble.textContent = "";
@@ -32,10 +34,16 @@
       speech[character].classList.add("visible");
       reportDisplayed(character, speech[character]);
 
-      speechTimer = setTimeout(hideSpeech, Number.isFinite(displayDuration) ? displayDuration : 2000);
-      queueMicrotask(() => document.dispatchEvent(new CustomEvent("ggg:student-turn-complete", {
-        detail: { character, guess, result },
-      })));
+      const owner = speechGeneration;
+      speechTimer = setTimeout(() => {
+        if (owner === speechGeneration) hideSpeech();
+      }, Number.isFinite(displayDuration) ? displayDuration : globalThis.GGGGameplaySpeed.snapshot().duration(2000, "speech"));
+      queueMicrotask(() => {
+        if (owner !== speechGeneration) return;
+        document.dispatchEvent(new CustomEvent("ggg:student-turn-complete", {
+          detail: { character, guess, result },
+        }));
+      });
     });
     return;
   }
@@ -54,6 +62,14 @@
     incorrect: 1000,
     frame: 220,
   });
+
+  // This adapter belongs to the current presentation. The speed policy does not.
+  function animationTiming(setting) {
+    const snapshot = globalThis.GGGGameplaySpeed.snapshot(setting);
+    return { ...Object.fromEntries(Object.entries(TIMING).map(([key, baseline]) =>
+      [key, snapshot.duration(baseline, key === "frame" ? "animationFrame" : key === "speaking" ? "speech" : key === "correct" ? "animationCycle" : "animationPhase")])),
+      maxTesting: snapshot.setting.mode === "max-testing" };
+  }
 
   const STUDENTS = Object.freeze({
     character1: Object.freeze({
@@ -169,6 +185,7 @@
       this.currentState = "idle";
       this.sequenceId = 0;
       this.timer = null;
+      this.pendingWait = null;
 
       config.imageFiles.forEach((filename) => {
         const image = new Image();
@@ -186,6 +203,9 @@
       this.sequenceId += 1;
       if (this.timer !== null) clearTimeout(this.timer);
       this.timer = null;
+      const pending = this.pendingWait;
+      this.pendingWait = null;
+      if (pending) pending(false);
       return this.sequenceId;
     }
 
@@ -211,22 +231,27 @@
 
     wait(duration, sequenceId) {
       return new Promise((resolve) => {
+        this.pendingWait = resolve;
         this.timer = setTimeout(() => {
+          if (sequenceId !== this.sequenceId) { resolve(false); return; }
           this.timer = null;
+          this.pendingWait = null;
           resolve(sequenceId === this.sequenceId);
         }, duration);
       });
     }
 
-    async playFrames(frames, duration, sequenceId, stateName, altText, speechText = "") {
+    async playFrames(frames, duration, sequenceId, stateName, altText, speechText = "", timing = animationTiming()) {
       const endsAt = performance.now() + duration;
       let frameIndex = 0;
+      let displayedFrames = 0;
 
-      while (performance.now() < endsAt) {
+      while (performance.now() < endsAt || (timing.maxTesting && displayedFrames < frames.length)) {
         this.showImage(frames[frameIndex], stateName, altText, speechText);
         frameIndex = (frameIndex + 1) % frames.length;
+        displayedFrames++;
         const remaining = endsAt - performance.now();
-        if (!(await this.wait(Math.min(TIMING.frame, remaining), sequenceId))) return false;
+        if (!(await this.wait(timing.maxTesting ? timing.frame : Math.min(timing.frame, remaining), sequenceId))) return false;
       }
 
       return true;
@@ -240,27 +265,27 @@
     async think() {
       const sequenceId = this.cancelSequence();
       this.showState("thinking");
-      if (await this.wait(TIMING.thinking, sequenceId)) this.showState("idle");
+      if (await this.wait(animationTiming().thinking, sequenceId)) this.showState("idle");
     }
 
-    async performGuess(guess, location, result = "test", onCorrectTransition = null, displayDuration = TIMING.speaking) {
+    async performGuess(guess, location, result = "test", onCorrectTransition = null, displayDuration, timing = animationTiming()) {
       const sequenceId = this.cancelSequence();
       const guessFrames = this.config.guessFrames;
       const speechDuration = Number.isFinite(displayDuration) && displayDuration > 0
         ? displayDuration
-        : TIMING.speaking;
+        : timing.speaking;
 
       this.showImage(
         guessFrames[0],
         "handRaised",
         `${this.config.name} raising her hand`
       );
-      if (!(await this.wait(TIMING.handToTeacher, sequenceId))) return;
+      if (!(await this.wait(timing.handToTeacher, sequenceId))) return;
 
       showTeacherSpeech("Go ahead.");
-      if (!(await this.wait(TIMING.teacherSpeaking, sequenceId))) return;
+      if (!(await this.wait(timing.teacherSpeaking, sequenceId))) return;
       showTeacherSpeech();
-      if (!(await this.wait(TIMING.teacherToStudent, sequenceId))) return;
+      if (!(await this.wait(timing.teacherToStudent, sequenceId))) return;
 
       this.showImage(
         guessFrames[0],
@@ -268,7 +293,7 @@
         `${this.config.name} identifying a word`,
         location
       );
-      if (!(await this.wait(TIMING.wordLocation, sequenceId))) return;
+      if (!(await this.wait(timing.wordLocation, sequenceId))) return;
 
       for (let index = 1; index < guessFrames.length; index += 1) {
         const speaking = index === guessFrames.length - 1;
@@ -280,30 +305,30 @@
             : `${this.config.name} beginning to speak`,
           speaking ? guess : ""
         );
-        if (!speaking && !(await this.wait(TIMING.frame, sequenceId))) return;
+        if (!speaking && !(await this.wait(timing.frame, sequenceId))) return;
       }
 
       if (result === "correct") {
-        if (!(await this.wait(TIMING.correctWatcherDelay, sequenceId))) return;
+        if (!(await this.wait(timing.correctWatcherDelay, sequenceId))) return;
         if (onCorrectTransition) onCorrectTransition();
-        if (!(await this.wait(TIMING.correctJoinDelay, sequenceId))) return;
+        if (!(await this.wait(timing.correctJoinDelay, sequenceId))) return;
         if (!(await this.playFrames(
           this.config.correctFrames,
-          TIMING.correct,
+          timing.correct,
           sequenceId,
           "correct",
           `${this.config.name} applauding after a correct answer`,
-          guess
+          guess, timing
         ))) return;
         const remainingSpeechTime = speechDuration
-          - TIMING.correctWatcherDelay
-          - TIMING.correctJoinDelay
-          - TIMING.correct;
+          - timing.correctWatcherDelay
+          - timing.correctJoinDelay
+          - timing.correct;
         if (remainingSpeechTime > 0 && !(await this.wait(remainingSpeechTime, sequenceId))) return;
       } else if (result === "incorrect") {
         if (!(await this.wait(speechDuration, sequenceId))) return;
         this.showState("incorrect");
-        if (!(await this.wait(TIMING.incorrect, sequenceId))) return;
+        if (!(await this.wait(timing.incorrect, sequenceId))) return;
       }
 
       this.showState("idle");
@@ -315,7 +340,8 @@
       this.showState(side === "opposite" ? "watchingOpposite" : "watching");
     }
 
-    async applaud(duration = 1000, side = "side") {
+    async applaud(duration, side = "side", timing = animationTiming()) {
+      duration = duration ?? timing.correct;
       const sequenceId = this.cancelSequence();
       const opposite = side === "opposite";
       const frames = opposite
@@ -329,7 +355,8 @@
         "applauding",
         opposite
           ? `${this.config.name} applauding another student on the opposite side`
-          : `${this.config.name} applauding another student`
+          : `${this.config.name} applauding another student`,
+        "", timing
       ))) return;
 
       this.showState("idle");
@@ -354,7 +381,11 @@
     return watcher.config.seat < speaker.config.seat ? "side" : "opposite";
   }
 
-  async function performGroupGuess(characterId, guess, location, result = "test", displayDuration = TIMING.speaking) {
+  let groupSequence = 0;
+
+  async function performGroupGuess(characterId, guess, location, result = "test", displayDuration, speedSetting) {
+    const owner = ++groupSequence;
+    const timing = animationTiming(speedSetting);
     const actor = students[characterId];
     if (!actor) return;
 
@@ -366,11 +397,11 @@
     let watcherApplause = [];
     const completed = await actor.performGuess(guess, location, result, () => {
       watcherApplause = watchers.map((watcher) => watcher.applaud(
-        TIMING.correct + TIMING.correctJoinDelay,
-        getLookDirection(watcher, actor)
+        timing.correct + timing.correctJoinDelay,
+        getLookDirection(watcher, actor), timing
       ));
-    }, displayDuration);
-    if (!completed) return;
+    }, displayDuration, timing);
+    if (!completed || owner !== groupSequence) return;
 
     if (result === "correct") {
       await Promise.all(watcherApplause);
@@ -378,6 +409,7 @@
       watchers.forEach((watcher) => watcher.idle());
     }
 
+    if (owner !== groupSequence) return;
     document.dispatchEvent(new CustomEvent("ggg:student-turn-complete", {
       detail: { character: characterId, guess, result },
     }));
@@ -388,6 +420,7 @@
   });
 
   document.addEventListener("ggg:student-reset", () => {
+    groupSequence++;
     showTeacherSpeech();
     Object.values(students).forEach((student) => student.idle());
   });
@@ -397,7 +430,9 @@
   });
 
   document.addEventListener("ggg:student-applaud", (event) => {
-    getActor(event.detail).applaud(event.detail?.duration, event.detail?.side);
+    const duration = event.detail?.duration;
+    getActor(event.detail).applaud(duration === undefined ? undefined
+      : globalThis.GGGGameplaySpeed.snapshot().duration(duration, "animationCycle"), event.detail?.side);
   });
 
   document.addEventListener("ggg:student-guess", (event) => {
@@ -409,7 +444,7 @@
     const characterId = students[event.detail?.character]
       ? event.detail.character
       : "character1";
-    performGroupGuess(characterId, guess, location, result, event.detail?.displayDuration);
+    performGroupGuess(characterId, guess, location, result, event.detail?.displayDuration, event.detail?.speedSetting);
   });
 
 })();

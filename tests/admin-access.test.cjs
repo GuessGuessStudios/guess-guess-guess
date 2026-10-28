@@ -5,10 +5,12 @@ const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
 const http = require('node:http');
-const { randomBytes, createHash } = require('node:crypto');
+const { randomBytes, createHash, pbkdf2Sync } = require('node:crypto');
 const sourceFile = path.join(__dirname, '..', 'server.js');
 const source = fs.readFileSync(sourceFile, 'utf8');
 const testPassword = `fake-test-only-${randomBytes(24).toString('hex')}`;
+const testSalt = randomBytes(16);
+const testHash = pbkdf2Sync(testPassword, testSalt, 310000, 32, 'sha256');
 const writes = [
   ['POST', '/api/puzzles?number=2&text=A%20cat.&extension=png', Buffer.from('89504e470d0a1a0a', 'hex'), 'image/png'],
   ['PUT', '/api/puzzles?number=1&text=A%20dog.', undefined, undefined],
@@ -16,13 +18,14 @@ const writes = [
   ['PUT', '/api/ai-logic-settings', JSON.stringify({ testSetting: true }), 'application/json'],
 ];
 
-async function fixture(password, run) {
+async function fixture(run, credentials = 'valid') {
   const root = await fsp.mkdtemp(path.join(os.tmpdir(), 'ggg-admin-'));
   let server;
   let now = Date.now();
   const logs = [];
   try {
     const initial = {
+      ".ggg-admin.local.json": JSON.stringify({ iterations: 310000, salt: testSalt.toString("base64"), hash: testHash.toString("base64") }),
       'index.html': '<script src="game.js"></script>',
       'game.js': '// fixture game',
       'puzzles/puzzle-list.json': '["puzzles/puzzle-001.json"]',
@@ -33,15 +36,16 @@ async function fixture(password, run) {
       'vaults/vault-5.json': JSON.stringify({ puzzles: {} }),
       'ai-logic-settings.json': '{}',
     };
+    if (credentials === 'missing') delete initial['.ggg-admin.local.json'];
+    if (credentials === 'invalid') initial['.ggg-admin.local.json'] = '{}';
     for (const [file, bytes] of Object.entries(initial)) {
       await fsp.mkdir(path.dirname(path.join(root, file)), { recursive: true });
       await fsp.writeFile(path.join(root, file), bytes);
     }
     await fsp.mkdir(path.join(root, 'assets/images'), { recursive: true });
     const env = { PORT: '0' };
-    if (password !== undefined) env.GGG_ADMIN_PASSWORD = password;
     const context = {
-      require: id => id === 'node:http' ? { ...http, createServer: fn => (server = http.createServer(fn)) } : require(id),
+      require: id => id === "./assistance-authoring.js" ? require("../assistance-authoring.js") : id === "./gameplay-speed.js" ? require("../gameplay-speed.js") : id === 'node:http' ? { ...http, createServer: fn => (server = http.createServer(fn)) } : require(id),
       __dirname: root, __filename: sourceFile, Buffer, URL,
       Date: class extends Date { static now() { return now; } },
       process: { pid: process.pid, env },
@@ -77,10 +81,14 @@ async function fixture(password, run) {
 }
 
 async function publicAccess({ request }) {
+  for (const route of ['/.ggg-admin.local.json', '/%2eggg-admin.local.json', '/.GGG-ADMIN.LOCAL.JSON']) {
+    assert.equal((await request(route)).status, 404, 'private verifier is never served');
+  }
   for (const route of ['/', '/game.js', '/puzzles/puzzle-list.json', '/puzzles/puzzle-001.json',
     '/vaults/vault-3.json', '/api/ai-logic-settings', '/api/runtime-info', '/api/next-puzzle-number']) {
     assert.equal((await request(route)).status, 200, route);
   }
+  assert.equal(JSON.parse(await (await request('/api/server-info')).text()).service, 'guess-guess-guess');
   assert.equal((await request('/api/gameplay-logs', 'POST', JSON.stringify({
     session: { sessionId: 'admin-fixture' }, events: [],
   }))).status, 201);
@@ -158,23 +166,31 @@ async function browserAdminFlow() {
 }
 
 (async () => {
+  assert(!source.includes(testPassword), 'synthetic password is absent from server source');
+  assert(!fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8').includes(testPassword),
+    'synthetic password is absent from browser source');
+  assert(!process.argv.includes(testPassword), 'synthetic password is absent from command-line arguments');
   await browserAdminFlow();
-  for (const password of [undefined, '']) {
-    await fixture(password, async api => {
-      await publicAccess(api);
-      const before = await api.snapshot();
-      const response = await api.login();
-      assert.equal(response.status, 401);
-      assert.equal(response.headers.get('set-cookie'), null);
-      assert.deepEqual(await response.json(), { error: 'Administrator login failed.' });
-      for (const entry of writes) assert.equal((await api.write(entry, 'ggg_admin_session=' + 'a'.repeat(64))).status, 401);
-      assert.deepEqual(await api.snapshot(), before, 'disabled writes leave all files unchanged');
-    });
+  for (const credentials of ['missing', 'invalid']) {
+    await fixture(async api => {
+      assert.equal((await api.request('/game.js')).status, 200);
+      assert.equal((await api.login()).status, 401);
+      for (const entry of writes) assert.equal((await api.write(entry)).status, 401);
+    }, credentials);
   }
-  console.log('PASS missing/empty environment: public reads and both logs work; login and all writes denied');
+  console.log('PASS missing/invalid private configuration fails closed; ordinary game assets remain available');
+  await fixture(async api => {
+    await publicAccess(api);
+    const before = await api.snapshot();
+    const response = await api.login();
+    assert.equal(response.status, 200, 'correct password succeeds without environment configuration');
+    const cookie = response.headers.get('set-cookie').split(';')[0];
+    for (const entry of writes) assert.equal((await api.write(entry, cookie)).status, entry[0] === 'POST' ? 201 : 200);
+  });
+  console.log('PASS normal startup and correct server-side PBKDF2 password without environment setup');
 
   let previousCookie;
-  await fixture(testPassword, async api => {
+  await fixture(async api => {
     await publicAccess(api);
     const before = await api.snapshot();
     for (const entry of writes) assert.equal((await api.write(entry)).status, 401);
@@ -242,8 +258,53 @@ async function browserAdminFlow() {
     previousCookie = (await api.login()).headers.get('set-cookie').split(';')[0];
     console.log('PASS rotation, cross-origin logout rejection, logout invalidation and exact eight-hour expiration');
   });
-  await fixture(testPassword, async api => {
+  await fixture(async api => {
     for (const entry of writes) assert.equal((await api.write(entry, previousCookie)).status, 401);
   });
   console.log('PASS sessions do not survive server restart');
+  await fixture(async api => {
+    const cookie = (await api.login()).headers.get('set-cookie').split(';')[0];
+    const save = (gameplaySpeed, auth = cookie) => api.request('/api/ai-logic-settings', 'PUT',
+      JSON.stringify({ preserved: true, gameplaySpeed }),
+      { 'Content-Type': 'application/json', ...(auth ? { Cookie: auth } : {}) });
+    const before = await api.snapshot();
+    assert.equal((await save({ mode: 'max-testing' }, null)).status, 401);
+    for (const value of [null, [], {}, { mode: 'human' }, { mode: 'human', percent: '100' },
+      { mode: 'human', percent: 9 }, { mode: 'human', percent: 151 },
+      { mode: 'human', percent: 100, extra: true }, { mode: 'max-testing', percent: 150 }, { mode: 'unknown' }]) {
+      assert.equal((await save(value)).status, 400, 'malformed speed rejected');
+      assert.deepEqual(await api.snapshot(), before, 'rejected setting leaves files unchanged');
+    }
+    for (const gameplaySpeed of [{ mode: 'human', percent: 10 }, { mode: 'human', percent: 100 },
+      { mode: 'human', percent: 150 }, { mode: 'max-testing' }]) {
+      assert.equal((await save(gameplaySpeed)).status, 200);
+      const persisted = await (await api.request('/api/ai-logic-settings')).json();
+      assert.deepEqual(persisted, { preserved: true, gameplaySpeed });
+    }
+  });
+  console.log('PASS protected speed persistence and rejection of malformed/out-of-range settings');
+  await fixture(async api => {
+    const cookie = (await api.login()).headers.get('set-cookie').split(';')[0];
+    const assistance = { enabled: false, minimumOrdinaryGuesses: 3, intervals: {
+      generalWrong: { min: 4, max: 8 }, generalCorrect: { min: 8, max: 12 },
+      pronounWrong: { min: 3, max: 6 }, pronounCorrect: { min: 6, max: 10 },
+    } };
+    const save = (value, auth = cookie) => api.request('/api/ai-logic-settings', 'PUT',
+      JSON.stringify({ preserved: true, assistance: value }),
+      { 'Content-Type': 'application/json', ...(auth ? { Cookie: auth } : {}) });
+    assert.equal((await save(assistance, null)).status, 401);
+    assert.equal((await save(assistance)).status, 200);
+    const before = await api.snapshot();
+    for (const invalid of [null, {}, { ...assistance, enabled: 'true' },
+      { ...assistance, minimumOrdinaryGuesses: 1 }, { ...assistance, minimumOrdinaryGuesses: 11 },
+      ...[{ min: 0, max: 5 }, { min: 5, max: 4 }, { min: 1.5, max: 6 }].map(pair =>
+        ({ ...assistance, intervals: { ...assistance.intervals, generalWrong: pair } }))]) {
+      assert.equal((await save(invalid)).status, 400);
+      assert.deepEqual(await api.snapshot(), before);
+    }
+    assert.deepEqual(await (await api.request('/api/ai-logic-settings')).json(), { preserved: true, assistance });
+    assert.equal((await save({ ...assistance, enabled: true })).status, 200);
+    assert.equal((await (await api.request('/api/ai-logic-settings')).json()).assistance.enabled, true);
+  });
+  console.log('PASS authenticated assistance persistence, explicit enabling and invalid numeric settings rejected without writes');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -2,7 +2,8 @@ const http = require("node:http");
 const fs = require("node:fs");
 const fsp = fs.promises;
 const path = require("node:path");
-const { createHash, randomUUID, randomBytes, timingSafeEqual } = require("node:crypto");
+const { createHash, randomUUID, randomBytes, timingSafeEqual, pbkdf2 } = require("node:crypto");
+const { promisify } = require("node:util");
 const SERVER_REVISION = createHash("sha256").update(fs.readFileSync(__filename)).digest("hex");
 let editQueue = Promise.resolve();
 let playtestLogQueue = Promise.resolve();
@@ -26,10 +27,30 @@ const FORENSIC_RUNTIME_FILES = {
   languageResource: path.join(PROJECT_ROOT, "assets", "language", "human-playtest-language.json"),
   dictionary: path.join(PROJECT_ROOT, "assets", "dictionary", "en_US-size-60.txt"),
 };
+const { validateSetting: validateGameplaySpeed } = require("./gameplay-speed.js");
+const assistanceAuthoring = require("./assistance-authoring.js");
 const PORT = Number(process.env.PORT || 8765);
 const HOST = "127.0.0.1";
-const ADMIN_PASSWORD_HASH = process.env.GGG_ADMIN_PASSWORD
-  ? createHash("sha256").update(process.env.GGG_ADMIN_PASSWORD).digest() : null;
+const ADMIN_CREDENTIALS_PATH = path.join(PROJECT_ROOT, ".ggg-admin.local.json");
+function loadAdminCredentials() {
+  try {
+    const value = JSON.parse(fs.readFileSync(ADMIN_CREDENTIALS_PATH, "utf8"));
+    if (!Number.isSafeInteger(value.iterations) || value.iterations < 1 || value.iterations > 10000000 ||
+        typeof value.salt !== "string" || typeof value.hash !== "string") throw new Error("Invalid credentials");
+    const salt = Buffer.from(value.salt, "base64");
+    const hash = Buffer.from(value.hash, "base64");
+    if (salt.length !== 16 || hash.length !== 32 ||
+        salt.toString("base64") !== value.salt || hash.toString("base64") !== value.hash) {
+      throw new Error("Invalid credentials");
+    }
+    return { iterations: value.iterations, salt, hash };
+  } catch {
+    console.error("Administrator login unavailable: private local configuration is missing or invalid.");
+    return null;
+  }
+}
+const adminCredentials = loadAdminCredentials();
+const deriveAdminPassword = promisify(pbkdf2);
 const ADMIN_SESSION_MS = 8 * 60 * 60 * 1000;
 const ADMIN_COOKIE = "ggg_admin_session";
 const adminSessions = new Map();
@@ -52,7 +73,6 @@ function adminSessionId(request) {
 }
 
 function hasAdminSession(request) {
-  if (!ADMIN_PASSWORD_HASH) return false;
   const id = adminSessionId(request);
   const expires = adminSessions.get(id);
   if (!expires || expires <= Date.now()) {
@@ -69,13 +89,18 @@ function setAdminCookie(response, id, maxAge) {
 
 async function loginAdmin(request, response) {
   try {
-    if (!ADMIN_PASSWORD_HASH || request.headers["content-type"]?.split(";")[0] !== "application/json") {
+    if (request.headers["content-type"]?.split(";")[0] !== "application/json") {
       sendJson(response, 401, { error: "Administrator login failed." });
       return;
     }
     const payload = JSON.parse((await requestBody(request, 4096)).toString("utf8"));
-    if (typeof payload?.password !== "string" ||
-        !timingSafeEqual(createHash("sha256").update(payload.password).digest(), ADMIN_PASSWORD_HASH)) {
+    if (!adminCredentials || typeof payload?.password !== "string") {
+      sendJson(response, 401, { error: "Administrator login failed." });
+      return;
+    }
+    const candidateHash = await deriveAdminPassword(
+      payload.password, adminCredentials.salt, adminCredentials.iterations, adminCredentials.hash.length, "sha256");
+    if (!timingSafeEqual(candidateHash, adminCredentials.hash)) {
       sendJson(response, 401, { error: "Administrator login failed." });
       return;
     }
@@ -248,6 +273,13 @@ async function updatePuzzle(request, response) {
   let originalImagePath = null;
 
   try {
+    const jsonRequest = request.headers['content-type']?.split(';')[0] === 'application/json';
+    const payload = jsonRequest ? JSON.parse((await requestBody(request, 35 * 1024 * 1024)).toString('utf8')) : null;
+    if (jsonRequest && (!payload || typeof payload !== 'object' || Array.isArray(payload)))
+      throw new Error('Invalid puzzle update body');
+    const hasAssistance = Boolean(payload && Object.hasOwn(payload, 'assistance'));
+    const assistance = hasAssistance ? assistanceAuthoring.validate(payload.assistance, text) : undefined;
+    if (payload?.imageData !== undefined && !extension) throw new Error('Image type is required');
     originalJsonBuffer = await fsp.readFile(jsonPath);
     const originalPuzzle = JSON.parse(originalJsonBuffer.toString("utf8"));
     const originalImageReference = originalPuzzle.image || "";
@@ -270,9 +302,18 @@ async function updatePuzzle(request, response) {
           if (error.code !== "ENOENT") throw error;
         }
       }
-      const imageData = await requestBody(request);
+      let imageData, mime;
+      if (jsonRequest) {
+        const match = typeof payload.imageData === 'string' && payload.imageData.match(/^data:(image\/(?:png|jpeg));base64,([A-Za-z0-9+/]+={0,2})$/);
+        if (!match) throw new Error('Invalid replacement image');
+        mime = match[1];
+        imageData = Buffer.from(match[2], 'base64');
+        if (imageData.length > 25 * 1024 * 1024) throw new Error('Image is larger than the 25 MB limit');
+      } else {
+        imageData = await requestBody(request);
+        mime = request.headers['content-type']?.split(';')[0];
+      }
       if (!imageData.length) throw new Error("Replacement image was empty");
-      const mime = request.headers["content-type"]?.split(";")[0];
       const png = imageData.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
       const jpeg = imageData[0] === 255 && imageData[1] === 216 && imageData[2] === 255;
       if ((extension === "png" && (!png || mime !== "image/png")) ||
@@ -290,8 +331,12 @@ async function updatePuzzle(request, response) {
     };
     if (removeImage) delete updatedPuzzle.image;
     const textChanged = String(originalPuzzle.text || "") !== text;
-    if (!textChanged && !imageChanged) {
-      sendJson(response, 200, { image: originalImageReference || null, vault3Cleared: false });
+    // Slot associations belong to the exact authored sentence.
+    if (textChanged) delete updatedPuzzle.assistance;
+    if (hasAssistance) updatedPuzzle.assistance = assistance;
+    const assistanceChanged = JSON.stringify(originalPuzzle.assistance) !== JSON.stringify(updatedPuzzle.assistance);
+    if (!textChanged && !imageChanged && !assistanceChanged) {
+      sendJson(response, 200, { image: originalImageReference || null, assistance: updatedPuzzle.assistance, vault3Cleared: false });
       return;
     }
     originalVault2Buffer = await fsp.readFile(VAULT_2_PATH);
@@ -337,6 +382,7 @@ async function updatePuzzle(request, response) {
     sendJson(response, 200, {
       puzzle: `puzzles/${puzzleName}.json`,
       image: updatedPuzzle.image || null,
+      assistance: updatedPuzzle.assistance,
       vault2Words: vault2.puzzles[String(number)],
       vault3Cleared,
       oldImageDeleted,
@@ -424,6 +470,20 @@ async function updateManualVault(request, response) {
   }
 }
 
+function validateAssistanceSettings(value) {
+  if (!value || typeof value.enabled !== 'boolean' ||
+      !Number.isInteger(value.minimumOrdinaryGuesses) || value.minimumOrdinaryGuesses < 2 ||
+      value.minimumOrdinaryGuesses > 10) throw new Error('Invalid assistance settings');
+  const intervals = {};
+  for (const key of ['generalWrong', 'generalCorrect', 'pronounWrong', 'pronounCorrect']) {
+    const pair = value.intervals?.[key];
+    if (!pair || !Number.isSafeInteger(pair.min) || !Number.isSafeInteger(pair.max) ||
+        pair.min < 1 || pair.max < pair.min) throw new Error(`Invalid assistance interval: ${key}`);
+    intervals[key] = { min: pair.min, max: pair.max };
+  }
+  return { enabled: value.enabled, intervals, minimumOrdinaryGuesses: value.minimumOrdinaryGuesses };
+}
+
 async function updateAiLogicSettings(request, response) {
   const tempPath = `${AI_SETTINGS_PATH}.tmp-${randomUUID()}`;
   try {
@@ -431,6 +491,8 @@ async function updateAiLogicSettings(request, response) {
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       throw new Error("AI settings must be an object");
     }
+    if (Object.hasOwn(payload, "gameplaySpeed")) payload.gameplaySpeed = validateGameplaySpeed(payload.gameplaySpeed);
+    if (Object.hasOwn(payload, 'assistance')) payload.assistance = validateAssistanceSettings(payload.assistance);
     await fsp.writeFile(tempPath, `${JSON.stringify(payload, null, 2)}\n`);
     await fsp.rename(tempPath, AI_SETTINGS_PATH);
     sendJson(response, 200, { settings: payload });
@@ -459,6 +521,10 @@ async function saveHumanPlaytestLog(request, response) {
   const payload = JSON.parse((await requestBody(request)).toString('utf8'));
   if (payload?.session?.predictionMode !== 'human-playtest' || !Array.isArray(payload.events) ||
       !/^[a-zA-Z0-9_-]{1,100}$/.test(payload.session.sessionId)) throw new Error('Invalid playtest log');
+  if (payload.format === 'ggg-human-playtest-chunk-v1') {
+    await saveHumanPlaytestChunk(payload, response);
+    return;
+  }
   const directory = path.join(GAMEPLAY_LOGS_DIR, 'human-playtest');
   const file = `gameplay-${payload.session.sessionId}.json`;
   const serialized = JSON.stringify(payload, null, 2) + '\n';
@@ -473,6 +539,52 @@ async function saveHumanPlaytestLog(request, response) {
   playtestLogQueue = operation.catch(() => {});
   await operation;
   sendJson(response, 201, { file: `gameplay-logs/human-playtest/${file}` });
+}
+
+async function saveHumanPlaytestChunk(payload, response) {
+  const { chunkSequence, firstEvent, lastEvent, events, session } = payload;
+  if (!Number.isSafeInteger(chunkSequence) || chunkSequence < 1 ||
+      !Number.isSafeInteger(firstEvent) || firstEvent < 1 || !events.length ||
+      lastEvent !== firstEvent + events.length - 1 ||
+      events.some((event, index) => event?.event !== firstEvent + index)) {
+    throw new Error('Invalid playtest chunk sequence');
+  }
+  const directory = path.join(GAMEPLAY_LOGS_DIR, 'human-playtest', `gameplay-${session.sessionId}.chunks`);
+  const chunkName = sequence => `chunk-${String(sequence).padStart(8, '0')}.json`;
+  const file = path.join(directory, chunkName(chunkSequence));
+  const serialized = JSON.stringify(payload) + '\n';
+  const operation = playtestLogQueue.then(async () => {
+    await fsp.mkdir(directory, { recursive: true });
+    let existing;
+    try { existing = await fsp.readFile(file, 'utf8'); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    // A lost acknowledgement must never duplicate events or overwrite evidence.
+    if (existing !== undefined) {
+      if (existing !== serialized) throw new Error('Conflicting playtest chunk retry');
+      return;
+    }
+    if (chunkSequence === 1) {
+      if (firstEvent !== 1 || events[0].type !== 'start') throw new Error('Missing session start');
+    } else {
+      const previous = JSON.parse(await fsp.readFile(path.join(directory, chunkName(chunkSequence - 1)), 'utf8'));
+      if (previous.lastEvent + 1 !== firstEvent || previous.finished ||
+          previous.session.puzzleNumber !== session.puzzleNumber ||
+          previous.session.startTime !== session.startTime) throw new Error('Out-of-order playtest chunk');
+    }
+    const temporary = file + '.tmp-' + randomUUID();
+    try {
+      const handle = await fsp.open(temporary, 'wx');
+      try { await handle.writeFile(serialized); await handle.sync(); }
+      finally { await handle.close(); }
+      await fsp.rename(temporary, file);
+    } finally {
+      await fsp.unlink(temporary).catch(error => { if (error.code !== 'ENOENT') throw error; });
+    }
+  });
+  playtestLogQueue = operation.catch(() => {});
+  await operation;
+  sendJson(response, 201, { persisted: true, sessionId: session.sessionId, chunkSequence, firstEvent, lastEvent,
+    file: `gameplay-logs/human-playtest/gameplay-${session.sessionId}.chunks/${chunkName(chunkSequence)}` });
 }
 
 async function savePuzzle(request, response) {
@@ -539,6 +651,9 @@ async function savePuzzle(request, response) {
 async function serveStatic(request, response, pathname) {
   const relativePath = pathname === "/" ? "index.html" : decodeURIComponent(pathname.slice(1));
   const filePath = path.resolve(PROJECT_ROOT, relativePath);
+  if (path.basename(filePath).toLowerCase() === ".ggg-admin.local.json") {
+    response.writeHead(404); response.end("Not found"); return;
+  }
   if (filePath !== PROJECT_ROOT && !filePath.startsWith(`${PROJECT_ROOT}${path.sep}`)) {
     response.writeHead(403); response.end("Forbidden"); return;
   }

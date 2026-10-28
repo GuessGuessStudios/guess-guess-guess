@@ -25,6 +25,11 @@ async function harness(file = path.join(root, 'game.js')) {
     ...Object.fromEntries([1,2,3,5].map(n => [n === 1 ? 'vault1Words' : `vault${n}ByPuzzle`, JSON.parse(read(`vaults/vault-${n}.json`))[n === 1 ? 'words' : 'puzzles']])),
     fetch: async file => ({ ok: true, text: async () => read(file), json: async () => JSON.parse(read(file)) }),
   });
+  ctx.gameplaySpeed = require('../gameplay-speed.js').createController();
+  ctx.turnTiming = ctx.gameplaySpeed.snapshot();
+  Object.assign(ctx, { opportunityGeneration: 0, aiScheduleGeneration: 0, recognitionGeneration: 0, aiCompletionTimer: null, wrongFeedback: null });
+  // Existing legacy-engine fixtures select their engine explicitly.
+  ctx.location = { search: '?aiMode=legacy' };
   ctx.window = ctx;
   ctx.document = { querySelectorAll: () => ctx.groups };
   ctx.getActualWord = g => g.querySelectorAll().map(b => b.dataset.letter).join('');

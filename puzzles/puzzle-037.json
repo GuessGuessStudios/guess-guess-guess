@@ -1,0 +1,69 @@
+{
+  "title": "Puzzle 037",
+  "text": "He finds a tiny crown inside a suitcase full of old shoes.",
+  "image": "assets/images/puzzle-037.png",
+  "assistance": {
+    "version": 1,
+    "sourceText": "He finds a tiny crown inside a suitcase full of old shoes.",
+    "slots": [
+      {
+        "slotIndex": 0,
+        "answerToken": "He",
+        "wrong": [],
+        "pronoun": true
+      },
+      {
+        "slotIndex": 1,
+        "answerToken": "finds",
+        "wrong": [
+          "hides",
+          "drops"
+        ],
+        "pronoun": false
+      },
+      {
+        "slotIndex": 4,
+        "answerToken": "crown",
+        "wrong": [
+          "watch",
+          "brush"
+        ],
+        "pronoun": false
+      },
+      {
+        "slotIndex": 5,
+        "answerToken": "inside",
+        "wrong": [
+          "behind"
+        ],
+        "pronoun": false
+      },
+      {
+        "slotIndex": 7,
+        "answerToken": "suitcase",
+        "wrong": [
+          "backpack",
+          "cupboard"
+        ],
+        "pronoun": false
+      },
+      {
+        "slotIndex": 10,
+        "answerToken": "old",
+        "wrong": [
+          "new"
+        ],
+        "pronoun": false
+      },
+      {
+        "slotIndex": 11,
+        "answerToken": "shoes",
+        "wrong": [
+          "socks",
+          "coats"
+        ],
+        "pronoun": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "title": "Puzzle 036",
+  "text": "She offers a carrot to a hungry snowman.",
+  "image": "assets/images/puzzle-036.png",
+  "assistance": {
+    "version": 1,
+    "sourceText": "She offers a carrot to a hungry snowman.",
+    "slots": [
+      {
+        "slotIndex": 0,
+        "answerToken": "She",
+        "wrong": [],
+        "pronoun": true
+      },
+      {
+        "slotIndex": 1,
+        "answerToken": "offers",
+        "wrong": [
+          "throws",
+          "tosses"
+        ],
+        "pronoun": false
+      },
+      {
+        "slotIndex": 3,
+        "answerToken": "carrot",
+        "wrong": [
+          "cookie",
+          "banana"
+        ],
+        "pronoun": false
+      },
+      {
+        "slotIndex": 6,
+        "answerToken": "hungry",
+        "wrong": [
+          "grumpy",
+          "sleepy"
+        ],
+        "pronoun": false
+      },
+      {
+        "slotIndex": 7,
+        "answerToken": "snowman",
+        "wrong": [
+          "penguin"
+        ],
+        "pronoun": false
+      }
+    ]
+  }
+}

@@ -17,6 +17,7 @@
   let categories = new Map();
   let activeLookup = new Map();
   let lengthIndex = new Map();
+  let multiwordEntries = [];
 
   function validateAndIndex(data) {
     if (!data || data.format !== FORMAT || !Number.isInteger(data.revision) || data.revision < 1 ||
@@ -95,6 +96,9 @@
     categories = categoryIndex;
     activeLookup = active;
     lengthIndex = byLength;
+    multiwordEntries = entries.filter(entry => entry.active).flatMap(entry =>
+      [entry.display, ...entry.aliases].filter(surface => /^[A-Za-z]+(?: [A-Za-z]+)+$/.test(surface))
+        .map(surface => ({ entry, words: surface.split(" ") })));
   }
 
   async function ready() {
@@ -112,15 +116,20 @@
     return resourcePromise;
   }
 
-  function resolveProperNounAuthorization(word, { publicEntity = false } = {}) {
+  function resolveProperNounAuthorization(word, { publicEntity = false, contextualForms = [] } = {}) {
     const key = normalize(word);
-    const bankEntry = activeLookup.get(key) || null;
+    const contextual = contextualForms.find(form => form.word === key) || null;
+    const bankEntry = activeLookup.get(key) || (contextual?.entryId ? activeLookup.get(normalize(contextual.display)) : null) || null;
     const engine = global.GGGHumanPlaytest;
     const familiarity = Number(engine?.nameFamiliarity?.(key) || 0);
     const sources = [];
     if (bankEntry) sources.push("proper-noun-bank");
+    // Internal or all-capital dictionary spellings supply distinctive source
+    // evidence; ordinary title case alone is not authorization.
+    if (global.vault4Dictionary?.dictionary?.ready && global.vault4Dictionary.dictionary.isDistinctiveProperWord?.(key)) sources.push("distinctive-dictionary-form");
     if (familiarity > 0) sources.push("legacy-recognized-name");
     if (publicEntity === true) sources.push("public-entity");
+    if (contextual?.title) sources.push("title-abbreviation");
     const authorizationSource = sources[0] || null;
     return {
       authorized: sources.length > 0,
@@ -128,7 +137,7 @@
       authorizationSources: sources,
       bankEntryId: bankEntry?.id || null,
       categories: bankEntry ? [...bankEntry.categories] : [],
-      accessCategory: bankEntry?.accessCategory || (familiarity > 0 ? "first-names" : publicEntity ? "public-entities" : null),
+      accessCategory: bankEntry?.accessCategory || (familiarity > 0 ? "first-names" : publicEntity ? "public-entities" : sources.includes("distinctive-dictionary-form") ? "dictionary-entities" : contextual?.title ? "title-abbreviations" : null),
       matchedSurface: bankEntry ? key : null,
       bankDisplay: bankEntry?.display || null,
       legacyNameFamiliarity: familiarity,
@@ -139,6 +148,42 @@
   function candidateForms(length) {
     if (!Number.isInteger(length) || length < 1) return [];
     return [...(lengthIndex.get(length) || [])];
+  }
+
+  // A component is authorized only when all other words of a banked entity
+  // are already visible in adjacent slots. Titles likewise require a visible,
+  // independently recognized following person and the public period.
+  function contextualForms(length, state, index) {
+    const slots = state?.slots || [], target = slots[index], engine = global.GGGHumanPlaytest;
+    if (!target || !engine) return [];
+    const forms = [];
+    for (const { entry, words } of multiwordEntries) {
+      for (let part = 0; part < words.length; part++) {
+        if (words[part].length !== length || (part < words.length - 1 && target.trailing)) continue;
+        const start = index - part;
+        if (start < 0 || start + words.length > slots.length) continue;
+        const matches = words.every((word, offset) => {
+          if (offset === part) return true;
+          const slot = slots[start + offset];
+          return slot?.solved && normalize(engine.tokenAt(slot)) === normalize(word) &&
+            (offset === words.length - 1 || !slot.trailing);
+        });
+        if (!matches) continue;
+        forms.push({ word: normalize(words[part]), orthographicSurface: words[part], entryId: entry.id,
+          display: entry.display, categories: entry.categories, accessCategory: entry.accessCategory,
+          matchedSurface: words[part], bankRevision: revision });
+      }
+    }
+    const next = slots[index + 1];
+    if (target.trailing === '.' && next?.solved && next.letters?.[0]?.capital) {
+      const person = resolveProperNounAuthorization(engine.tokenAt(next));
+      if (person.legacyNameFamiliarity > 0 || person.categories.some(c => c === 'first-names' || c === 'surnames')) {
+        for (const title of ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Rev']) if (title.length === length)
+          forms.push({ word: normalize(title), orthographicSurface: title, display: title,
+            categories: [], accessCategory: 'title-abbreviations', matchedSurface: title, bankRevision: null, title: true });
+      }
+    }
+    return forms;
   }
 
   function interleaveByAccessCategory(candidates, boardKey, compare) {
@@ -201,6 +246,7 @@
     lookup: word => activeLookup.get(normalize(word)) || null,
     resolveProperNounAuthorization,
     candidateForms,
+    contextualForms,
     interleaveByAccessCategory,
   });
 })(globalThis);

@@ -29,7 +29,7 @@ async function get(base, route) {
     await fsp.writeFile(path.join(root, 'game.js'), game);
     await fsp.writeFile(path.join(root, 'data.json'), '{}\n');
     const context = {
-      require: id => id === 'node:http' ? { ...http, createServer: fn => (server = http.createServer(fn)) } : require(id),
+      require: id => id === "./assistance-authoring.js" ? require("../assistance-authoring.js") : id === './gameplay-speed.js' ? require('../gameplay-speed.js') : id === 'node:http' ? { ...http, createServer: fn => (server = http.createServer(fn)) } : require(id),
       __dirname: root, __filename: path.join(root, 'server.js'), Buffer, URL,
       process: { pid: process.pid, env: { PORT: '0' } }, console: { log() {}, error() {} },
     };

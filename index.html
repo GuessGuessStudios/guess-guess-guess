@@ -23,8 +23,45 @@
         <h2>Admin Main Menu</h2>
         <div class="admin-menu-choices">
           <button type="button" data-admin-screen="adminCreateGame">Create Puzzle</button>
+          <button type="button" data-admin-screen="adminGameplaySpeed">Gameplay Speed</button>
+          <button type="button" data-admin-screen="adminAssistance">Assistance</button>
           <button id="closeAdminPanelBtn" type="button">Close and Log Out</button>
         </div>
+      </div>
+      <div id="adminGameplaySpeed" class="admin-screen hidden">
+        <h2>GAMEPLAY SPEED</h2>
+        <button type="button" class="admin-back-btn">Back</button>
+        <form id="gameplaySpeedForm" class="gameplay-speed-form">
+          <label for="gameplaySpeedPercent">Human-play speed: <output id="gameplaySpeedValue" for="gameplaySpeedPercent">100%</output></label>
+          <input id="gameplaySpeedPercent" name="percent" type="range" min="10" max="150" step="1" value="100" list="gameplaySpeedMarks">
+          <datalist id="gameplaySpeedMarks"><option value="10" label="10%"></option><option value="100" label="100% — current speed"></option><option value="150" label="150%"></option></datalist>
+          <p>10% slow · 100% current speed · 150% fast</p>
+          <button id="resetGameplaySpeed" type="button">Reset to 100%</button>
+          <label class="max-testing-speed"><input name="maxTesting" type="checkbox"> MAX TESTING SPEED <small>For automated testing</small></label>
+          <button name="save" type="submit" disabled>Save Gameplay Speed</button>
+          <p id="gameplaySpeedStatus" role="status" aria-live="polite">Changes apply from the next turn after saving.</p>
+        </form>
+      </div>
+      <div id="adminAssistance" class="admin-screen hidden">
+        <h2>Assistance</h2>
+        <button type="button" class="admin-back-btn">Back</button>
+        <form id="assistanceSettingsForm" class="assistance-settings-form">
+          <label><input name="enabled" type="checkbox"> Assistance ON</label>
+          <p>Changes apply from the next game. Intervals count incorrect guesses by all players.</p>
+          <fieldset><legend>Part One — General assistance</legend>
+            <p>Active after the player opens the picture.</p>
+            <div class="assistance-interval"><span>Plausible incorrect word</span><label>Minimum <input name="generalWrongMin" type="number" min="1" step="1" required></label><label>Maximum <input name="generalWrongMax" type="number" min="1" step="1" required></label></div>
+            <div class="assistance-interval"><span>Correct word</span><label>Minimum <input name="generalCorrectMin" type="number" min="1" step="1" required></label><label>Maximum <input name="generalCorrectMax" type="number" min="1" step="1" required></label></div>
+          </fieldset>
+          <fieldset><legend>Part Two — Pronoun assistance</legend>
+            <p>Active with or without the picture, for marked pronoun slots.</p>
+            <div class="assistance-interval"><span>Incorrect pronoun</span><label>Minimum <input name="pronounWrongMin" type="number" min="1" step="1" required></label><label>Maximum <input name="pronounWrongMax" type="number" min="1" step="1" required></label></div>
+            <div class="assistance-interval"><span>Correct pronoun</span><label>Minimum <input name="pronounCorrectMin" type="number" min="1" step="1" required></label><label>Maximum <input name="pronounCorrectMax" type="number" min="1" step="1" required></label></div>
+          </fieldset>
+          <label>Minimum ordinary ETTIN guesses between assisted guesses <input name="minimumOrdinaryGuesses" type="number" min="2" max="10" step="1" required></label>
+          <button name="save" type="submit" disabled>Save Assistance Settings</button>
+          <p id="assistanceSettingsStatus" role="status" aria-live="polite"></p>
+        </form>
       </div>
       <div id="adminCreateGame" class="admin-screen hidden">
         <div class="create-game-header">
@@ -56,6 +93,14 @@
           </div>
           <input id="editPuzzleImage" class="hidden" type="file" accept="image/jpeg,image/png">
           <div id="editPuzzleSelectedImage" class="edit-puzzle-selected-image" aria-live="polite"></div>
+          <details id="assistanceWordsSection" class="assistance-words">
+            <summary>Assistance Words</summary>
+            <p id="assistanceWordsPuzzle"></p>
+            <p>Enter incorrect alternatives, one per line or separated by commas. Match the answer's letter count, capitals and internal punctuation. Leave any row empty. Check Pronoun where appropriate.</p>
+            <p id="assistanceWordsStatus" role="status" aria-live="polite"></p>
+            <fieldset id="assistanceWordRows" aria-label="Prepared words and pronoun slots"></fieldset>
+            <p>Use Save Changes below to save these words with the puzzle.</p>
+          </details>
           <div class="edit-puzzle-actions">
             <button id="savePuzzleChangesBtn" type="button">Save Changes</button>
             <button id="cancelPuzzleEditBtn" type="button">Cancel</button>
@@ -169,10 +214,13 @@
   </div>
 
   <script src="hints.js"></script>
+  <script src="gameplay-speed.js"></script>
+  <script src="assistance-authoring.js"></script>
   <script src="student-animation.js"></script>
   <script src="assets/dictionary/dictionary-manager.js"></script>
   <script src="vaults/vault-4.js"></script>
   <script src="human-playtest-eligibility.js"></script>
+  <script src="visual-cue-experiment.js"></script>
   <script src="human-playtest.js"></script>
   <script src="proper-noun-bank.js"></script>
   <script src="public-board.js"></script>
